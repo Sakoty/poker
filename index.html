@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Online Card Battle1</title>
+<title>Online Card Battle2</title>
 
 <style>
 * {
@@ -301,6 +301,7 @@ if (!myId) {
 
 let myName = "";
 let roomId = "";
+let roomPath = ""; // Firebase上の実際の保存先
 let isHost = false;
 let roomListener = null;
 let busy = false;
@@ -315,8 +316,82 @@ function message(text) {
   $("message").textContent = text;
 }
 
+/* ルームID正規化 */
+function normalizeRoomId(value) {
+  return String(value || "")
+    .trim()
+    .replace(/\s+/g, "")
+    .toUpperCase();
+}
+
+/* 全操作で同じルーム参照を使用 */
 function roomRef() {
-  return ref(db, "rooms/" + roomId);
+  if (!roomId) {
+    throw new Error("ルームIDが設定されていません。");
+  }
+
+  if (!roomPath) {
+    roomPath = roomId;
+  }
+
+  return ref(db, roomPath);
+}
+
+/*
+  ルーム保存先を検出する。
+  新方式(root/ID)と旧方式(rooms/ID)の両方を確認。
+*/
+async function findRoomPath(code) {
+  const rootPath = code;
+  const legacyPath = "rooms/" + code;
+
+  const rootSnapshot = await get(ref(db, rootPath));
+
+  if (rootSnapshot.exists()) {
+    return {
+      path: rootPath,
+      snapshot: rootSnapshot,
+      format: "root"
+    };
+  }
+
+  const legacySnapshot = await get(ref(db, legacyPath));
+
+  if (legacySnapshot.exists()) {
+    return {
+      path: legacyPath,
+      snapshot: legacySnapshot,
+      format: "rooms"
+    };
+  }
+
+  return {
+    path: rootPath,
+    snapshot: rootSnapshot,
+    format: "missing"
+  };
+}
+
+/* 参加失敗理由 */
+function explainJoinFailure(room) {
+  if (!room) {
+    return "参加できません：ルームが見つかりません。IDと保存場所を確認してください。";
+  }
+
+  if (room.state !== "waiting") {
+    return "参加できません：このルームは募集状態ではありません。";
+  }
+
+  const players = room.players || {};
+
+  if (
+    Object.keys(players).length >= 8 &&
+    !players[myId]
+  ) {
+    return "参加できません：ルームが満員です（8人）。";
+  }
+
+  return "参加できません：参加処理が確定しませんでした。Firebase Rulesと通信状態を確認してください。";
 }
 
 /* ルームID生成 */
@@ -396,9 +471,11 @@ $("createBtn").onclick = async () => {
 
   try {
     let success = false;
+    roomPath = "";
 
     for (let i = 0; i < 5; i++) {
       roomId = createRoomCode();
+      roomPath = roomId;
 
       const roomData = {
         host: myId,
@@ -416,7 +493,7 @@ $("createBtn").onclick = async () => {
       };
 
       const result = await runTransaction(
-        ref(db, "rooms/" + roomId),
+        ref(db, roomPath),
         current => current === null ? roomData : undefined
       );
 
@@ -445,12 +522,12 @@ $("createBtn").onclick = async () => {
   }
 };
 
-/* ルーム参加：ID正規化、存在確認、競合を考慮したトランザクション */
+/* ルーム参加 */
 $("joinBtn").onclick = async () => {
   if (busy) return;
 
   myName = $("nameInput").value.trim();
-  roomId = $("roomInput").value.trim().replace(/\s+/g, "").toUpperCase();
+  roomId = normalizeRoomId($("roomInput").value);
   $("roomInput").value = roomId;
 
   if (!myName || !roomId) {
@@ -464,29 +541,82 @@ $("joinBtn").onclick = async () => {
   message("ルームを確認しています...");
 
   try {
-    const targetRef = ref(db, "rooms/" + roomId);
-    const check = await get(targetRef);
+    /*
+      root直下と旧rooms/配下を確認し、
+      存在する保存先を選択する。
+    */
+    const detected = await findRoomPath(roomId);
+
+    roomPath = detected.path;
+
+    const targetRef = ref(db, roomPath);
+    const check = detected.snapshot;
 
     if (!check.exists()) {
-      message("そのルームIDは存在しません。IDを確認してください。");
+      message("そのルームIDは見つかりません。IDを確認してください。");
+
+      console.warn("参加前チェックでルームが見つかりません", {
+        roomId,
+        checkedPaths: [
+          roomId,
+          "rooms/" + roomId
+        ]
+      });
+
+      return;
+    }
+
+    console.info("ルーム保存先を検出", {
+      roomId,
+      roomPath,
+      format: detected.format
+    });
+
+    const roomBeforeJoin = check.val();
+
+    if (roomBeforeJoin?.state !== "waiting") {
+      message("このルームは現在参加受付中ではありません。");
+
+      console.warn("参加前チェック：stateがwaitingではありません", {
+        roomId,
+        roomPath,
+        state: roomBeforeJoin?.state
+      });
+
       return;
     }
 
     message("参加処理中...");
 
+    let transactionAbortReason = "unknown";
+
     const result = await runTransaction(targetRef, room => {
-      if (!room || room.state !== "waiting") return;
+      if (!room) {
+        transactionAbortReason = "room-missing";
+        return;
+      }
+
+      if (room.state !== "waiting") {
+        transactionAbortReason = "not-waiting";
+        return;
+      }
 
       room.players = room.players || {};
 
-      // 既に参加している同じIDなら名前のみ更新
+      /* 同じIDで既に参加している場合 */
       if (room.players[myId]) {
         room.players[myId].name = myName;
+        transactionAbortReason = "already-joined";
         return room;
       }
 
-      // 同時参加でも8人を超えないようtransaction内で判定
-      if (Object.keys(room.players).length >= 8) return;
+      /* 最大8人 */
+      if (Object.keys(room.players).length >= 8) {
+        transactionAbortReason = "full";
+        return;
+      }
+
+      transactionAbortReason = "joined";
 
       room.players[myId] = {
         name: myName,
@@ -495,24 +625,45 @@ $("joinBtn").onclick = async () => {
       };
 
       return room;
-    }, { applyLocally: false });
+    }, {
+      applyLocally: false
+    });
 
     if (!result.committed) {
       const latest = result.snapshot.val();
-      if (!latest) {
-        message("参加できません：ルームが消えた可能性があります。");
-      } else if (latest.state !== "waiting") {
-        message("参加できません：ゲーム開始済みです。");
-      } else if (Object.keys(latest.players || {}).length >= 8 &&
-                 !latest.players?.[myId]) {
-        message("参加できません：ルームが満員です（8人）。");
-      } else {
-        message("参加処理が拒否されました。Firebase Rulesを確認してください。");
+
+      let failureText = explainJoinFailure(latest);
+
+      if (transactionAbortReason === "room-missing") {
+        failureText = "参加できません：処理中にルームが見つからなくなりました。";
       }
+
+      if (transactionAbortReason === "not-waiting") {
+        failureText = "参加できません：ルームが募集状態ではありません。";
+      }
+
+      if (transactionAbortReason === "full") {
+        failureText = "参加できません：ルームが満員です（8人）。";
+      }
+
+      message(failureText);
+
+      console.warn("参加トランザクション未確定", {
+        roomId,
+        roomPath,
+        abortReason: transactionAbortReason,
+        snapshotExists: result.snapshot.exists(),
+        state: latest?.state,
+        playerCount: Object.keys(latest?.players || {}).length,
+        myIdAlreadyJoined: Boolean(latest?.players?.[myId]),
+        snapshot: latest
+      });
+
       return;
     }
 
     const joinedRoom = result.snapshot.val();
+
     if (!joinedRoom?.players?.[myId]) {
       message("参加結果を確認できませんでした。再試行してください。");
       return;
@@ -520,14 +671,25 @@ $("joinBtn").onclick = async () => {
 
     isHost = joinedRoom.host === myId;
     enterRoom();
+
   } catch (e) {
     console.error("参加エラー詳細:", e);
+
     const code = e?.code || "unknown";
+
     if (code.includes("permission-denied")) {
       message("permission_denied：Realtime Databaseの読み書きルールが参加者に許可されていません。");
     } else {
       message("参加エラー (" + code + "): " + (e?.message || String(e)));
+
+      console.error("参加エラー時の参照情報", {
+        roomId,
+        path: roomPath,
+        code,
+        message: e?.message
+      });
     }
+
   } finally {
     busy = false;
     $("joinBtn").disabled = false;
@@ -541,7 +703,9 @@ function enterRoom() {
   $("gamePanel").classList.remove("hidden");
   $("roomCode").textContent = roomId;
 
-  if (roomListener) roomListener();
+  if (roomListener) {
+    roomListener();
+  }
 
   roomListener = onValue(roomRef(), snapshot => {
     if (!snapshot.exists()) {
@@ -550,6 +714,7 @@ function enterRoom() {
     }
 
     render(snapshot.val());
+
   }, error => {
     console.error("ルーム同期エラー:", error);
     status("同期エラー: " + (error.code || error.message || "unknown"));
@@ -623,11 +788,15 @@ $("startBtn").onclick = async () => {
 
   try {
     const result = await runTransaction(roomRef(), room => {
-      if (!room || room.host !== myId || room.state !== "waiting") return;
+      if (!room || room.host !== myId || room.state !== "waiting") {
+        return;
+      }
 
       const ids = Object.keys(room.players || {});
 
-      if (ids.length < 2 || ids.length > 8) return;
+      if (ids.length < 2 || ids.length > 8) {
+        return;
+      }
 
       const deck = createDeck();
 
@@ -676,7 +845,9 @@ $("resetBtn").onclick = async () => {
 
   try {
     const result = await runTransaction(roomRef(), room => {
-      if (!room || room.host !== myId || room.state !== "finished") return;
+      if (!room || room.host !== myId || room.state !== "finished") {
+        return;
+      }
 
       Object.values(room.players || {}).forEach(player => {
         player.card = null;
@@ -712,7 +883,7 @@ $("copyRoomBtn").onclick = async () => {
   }
 };
 
-/* 退出 */
+/* 退出：roomPathを保持したまま同じルームノードを更新する。 */
 $("leaveBtn").onclick = async () => {
   if (busy) return;
 
@@ -720,7 +891,9 @@ $("leaveBtn").onclick = async () => {
 
   try {
     await runTransaction(roomRef(), room => {
-      if (!room || !room.players || !room.players[myId]) return;
+      if (!room || !room.players || !room.players[myId]) {
+        return;
+      }
 
       delete room.players[myId];
 
@@ -764,12 +937,11 @@ $("leaveBtn").onclick = async () => {
   }
 };
 
-
-/* 入力されたルームIDは参加ボタンでも再正規化されます。
-   入力中はカーソル位置がずれる可能性を避けるため、ここでは値を書き換えません。 */
+/* 入力中はカーソル位置を変えない。参加時に正規化する。 */
 $("roomInput").addEventListener("input", () => {
   // IDは参加ボタン押下時にtrim・大文字化して処理します。
 });
+
 </script>
 </body>
 </html>
