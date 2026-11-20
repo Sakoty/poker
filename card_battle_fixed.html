@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Online Card Battle1</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #071811;
+  color: #f4f5ee;
+  font-family: system-ui, sans-serif;
+}
+
+header {
+  text-align: center;
+  padding: 24px 12px;
+  background: #0b2417;
+  border-bottom: 1px solid #294d35;
+}
+
+h1 {
+  margin: 0;
+  color: #d8c17b;
+  letter-spacing: 4px;
+}
+
+main {
+  width: min(900px, 100%);
+  margin: auto;
+  padding: 18px;
+}
+
+.panel {
+  background: #102d1d;
+  border: 1px solid #294d35;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+input {
+  width: 100%;
+  max-width: 400px;
+  padding: 13px;
+  margin: 6px 0;
+  border: 1px solid #35563d;
+  border-radius: 9px;
+  background: #081b11;
+  color: white;
+  font-size: 16px;
+}
+
+button {
+  border: none;
+  border-radius: 9px;
+  padding: 13px 18px;
+  margin: 5px 3px;
+  background: #d5bd77;
+  color: #152519;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+
+.secondary {
+  background: #244c34;
+  color: white;
+}
+
+.danger {
+  background: #8f3d3d;
+  color: white;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.muted {
+  color: #96ad9b;
+}
+
+.status {
+  color: #e0cb8a;
+  font-weight: bold;
+}
+
+.room-code {
+  font-size: 25px;
+  letter-spacing: 4px;
+  color: #e0cb8a;
+  word-break: break-all;
+}
+
+.players {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+  gap: 12px;
+}
+
+.player {
+  background: #183b26;
+  border: 1px solid #345b40;
+  border-radius: 12px;
+  padding: 15px;
+  text-align: center;
+}
+
+.player.me {
+  border: 2px solid #d6bd77;
+}
+
+.player-name {
+  font-weight: bold;
+  overflow-wrap: anywhere;
+}
+
+.player-meta {
+  font-size: 12px;
+  color: #a6baa8;
+  margin-top: 5px;
+}
+
+.card {
+  width: 84px;
+  height: 118px;
+  border-radius: 12px;
+  background: white;
+  color: #202020;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 12px auto;
+  font-size: 32px;
+  font-weight: bold;
+  box-shadow: 0 5px 12px #0005;
+}
+
+.card.red {
+  color: #d42d40;
+}
+
+.card-back {
+  background: linear-gradient(135deg, #244d36, #102719);
+  color: #d6bd77;
+  border: 3px solid #d6bd77;
+}
+
+.result {
+  text-align: center;
+  padding: 18px;
+  border-radius: 12px;
+  background: #183b25;
+  margin-top: 14px;
+}
+
+.result h2 {
+  color: #f2d98d;
+}
+
+.actions {
+  text-align: center;
+  margin-top: 18px;
+}
+
+footer {
+  text-align: center;
+  color: #78927e;
+  padding: 20px;
+  font-size: 12px;
+}
+
+@media (max-width: 480px) {
+  main {
+    padding: 10px;
+  }
+
+  .panel {
+    padding: 15px;
+  }
+
+  h1 {
+    font-size: 23px;
+  }
+
+  button {
+    width: 100%;
+    margin: 5px 0;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>CARD BATTLE</h1>
+  <p>ONLINE MULTIPLAYER</p>
+</header>
+
+<main>
+
+<section class="panel" id="lobby">
+  <h2>プレイヤー設定</h2>
+
+  <input id="nameInput" maxlength="12" placeholder="プレイヤー名">
+
+  <div>
+    <button id="createBtn">ルームを作成</button>
+  </div>
+
+  <hr>
+
+  <input id="roomInput" maxlength="8" placeholder="ルームID">
+
+  <div>
+    <button id="joinBtn" class="secondary">ルームに参加</button>
+  </div>
+
+  <p id="message" class="muted"></p>
+</section>
+
+<section class="panel hidden" id="gamePanel">
+
+  <h2>ゲームルーム</h2>
+
+  <p>ルームID</p>
+  <div class="room-code" id="roomCode"></div>
+
+  <button id="copyRoomBtn" class="secondary">IDをコピー</button>
+
+  <p id="gameStatus" class="status">接続中...</p>
+
+  <hr>
+
+  <h3>プレイヤー一覧</h3>
+  <div class="players" id="players"></div>
+
+  <section class="result hidden" id="resultBox">
+    <h2>結果</h2>
+    <p id="resultText"></p>
+  </section>
+
+  <div class="actions">
+    <button id="startBtn">カード勝負を開始</button>
+    <button id="resetBtn" class="secondary">次の勝負</button>
+    <button id="leaveBtn" class="danger">退出</button>
+  </div>
+
+</section>
+
+</main>
+
+<footer>Online Card Battle · Free Play</footer>
+
+<script type="module">
+
+import { initializeApp } from
+  "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+import {
+  getDatabase,
+  ref,
+  get,
+  runTransaction,
+  onValue
+} from
+  "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+/* Firebase設定 */
+const firebaseConfig = {
+  apiKey: "AIzaSyDVkeLT4chg6nPCdzpec-XAqPVgrj_-w3A",
+  authDomain: "porker-31a39.firebaseapp.com",
+  projectId: "porker-31a39",
+  storageBucket: "porker-31a39.firebasestorage.app",
+  messagingSenderId: "506584003822",
+  appId: "1:506584003822:web:260f5d4dba999e4e74efff",
+  measurementId: "G-N6H6HVT0F4"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+/* プレイヤー情報 */
+let myId = localStorage.getItem("cardBattlePlayerId");
+
+if (!myId) {
+  myId = crypto.randomUUID();
+  localStorage.setItem("cardBattlePlayerId", myId);
+}
+
+let myName = "";
+let roomId = "";
+let roomPath = ""; // Firebase上の実際の保存先
+let isHost = false;
+let roomListener = null;
+let busy = false;
+
+const $ = id => document.getElementById(id);
+
+function status(text) {
+  $("gameStatus").textContent = text;
+}
+
+function message(text) {
+  $("message").textContent = text;
+}
+
+/* 全操作でこのルームID直下のパスを使う。
+   作成・参加・監視・開始・再戦・退出の参照先を一致させる。 */
+function normalizeRoomId(value) {
+  // 空白を除去し、大文字化してルームIDを統一する
+  return String(value || "").trim().replace(/\s+/g, "").toUpperCase();
+}
+
+
+function roomRef() {
+  // roomPathを入室時に確定させ、全操作で同じ保存先を使う。
+  if (!roomId) throw new Error("ルームIDが設定されていません。");
+  if (!roomPath) roomPath = roomId;
+  return ref(db, roomPath);
+}
+
+
+/* ルーム保存先を検出。新方式(root/ID)と旧方式(rooms/ID)の両方を確認する。 */
+async function findRoomPath(code) {
+  const rootPath = code;
+  const legacyPath = "rooms/" + code;
+  const rootSnapshot = await get(ref(db, rootPath));
+  if (rootSnapshot.exists()) return { path: rootPath, snapshot: rootSnapshot, format: "root" };
+  const legacySnapshot = await get(ref(db, legacyPath));
+  if (legacySnapshot.exists()) return { path: legacyPath, snapshot: legacySnapshot, format: "rooms" };
+  return { path: rootPath, snapshot: rootSnapshot, format: "missing" };
+}
+
+
+function explainJoinFailure(room) {
+  if (!room) return "参加できません：ルームが見つかりません。IDとFirebaseの保存場所を確認してください。";
+  if (room.state !== "waiting") return "参加できません：このルームは募集状態ではありません。";
+  const players = room.players || {};
+  if (Object.keys(players).length >= 8 && !players[myId]) return "参加できません：ルームが満員です（8人）。";
+  return "参加できません：参加処理が確定しませんでした。Firebase Rulesと通信状態を確認してください。";
+}
+
+/* ルームID生成 */
+function createRoomCode() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+
+  for (let i = 0; i < 6; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)];
+  }
+
+  return code;
+}
+
+/* デッキ作成 */
+function createDeck() {
+  const suits = [
+    { symbol: "♠", color: "black" },
+    { symbol: "♥", color: "red" },
+    { symbol: "♦", color: "red" },
+    { symbol: "♣", color: "black" }
+  ];
+
+  const ranks = [
+    { value: "2", rank: 2 },
+    { value: "3", rank: 3 },
+    { value: "4", rank: 4 },
+    { value: "5", rank: 5 },
+    { value: "6", rank: 6 },
+    { value: "7", rank: 7 },
+    { value: "8", rank: 8 },
+    { value: "9", rank: 9 },
+    { value: "10", rank: 10 },
+    { value: "J", rank: 11 },
+    { value: "Q", rank: 12 },
+    { value: "K", rank: 13 },
+    { value: "A", rank: 14 }
+  ];
+
+  const deck = [];
+
+  suits.forEach(suit => {
+    ranks.forEach(rank => {
+      deck.push({
+        symbol: suit.symbol,
+        color: suit.color,
+        value: rank.value,
+        rank: rank.rank
+      });
+    });
+  });
+
+  /* シャッフル */
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [deck[i], deck[j]] = [deck[j], deck[i]];
+  }
+
+  return deck;
+}
+
+/* ルーム作成 */
+$("createBtn").onclick = async () => {
+  if (busy) return;
+
+  myName = $("nameInput").value.trim();
+
+  if (!myName) {
+    message("プレイヤー名を入力してください。");
+    return;
+  }
+
+  busy = true;
+  $("createBtn").disabled = true;
+  $("joinBtn").disabled = true;
+  message("作成中...");
+
+  try {
+    let success = false;
+    roomPath = "";
+
+    for (let i = 0; i < 5; i++) {
+      roomId = createRoomCode();
+      roomPath = roomId; // 新規ルームはデータベース直下に作成
+
+      const roomData = {
+        host: myId,
+        state: "waiting",
+        createdAt: Date.now(),
+        round: 0,
+        result: "",
+        players: {
+          [myId]: {
+            name: myName,
+            joinedAt: Date.now(),
+            card: null
+          }
+        }
+      };
+
+      const result = await runTransaction(
+        ref(db, roomPath), // 新規ルームはID直下に保存
+        current => current === null ? roomData : undefined
+      );
+
+      if (result.committed) {
+        success = true;
+        break;
+      }
+    }
+
+    if (!success) {
+      message("ルームを作成できませんでした。");
+      return;
+    }
+
+    isHost = true;
+    enterRoom();
+
+  } catch (e) {
+    console.error(e);
+    message("エラー: " + e.message);
+
+  } finally {
+    busy = false;
+    $("createBtn").disabled = false;
+    $("joinBtn").disabled = false;
+  }
+};
+
+/* ルーム参加：ID正規化、存在確認、競合を考慮したトランザクション */
+$("joinBtn").onclick = async () => {
+  if (busy) return;
+
+  myName = $("nameInput").value.trim();
+  roomId = normalizeRoomId($("roomInput").value);
+  $("roomInput").value = roomId;
+
+  if (!myName || !roomId) {
+    message("名前とIDを入力してください。");
+    return;
+  }
+
+  busy = true;
+  $("joinBtn").disabled = true;
+  $("createBtn").disabled = true;
+  message("ルームを確認しています...");
+
+  try {
+    // root直下と旧rooms/配下を順に確認し、存在する保存先に接続する
+    const detected = await findRoomPath(roomId);
+    roomPath = detected.path;
+    const targetRef = ref(db, roomPath);
+    const check = detected.snapshot;
+
+    if (!check.exists()) {
+      message("そのルームIDは見つかりません。IDを確認してください。");
+      console.warn("参加前チェックでルームが見つかりません", {
+        roomId,
+        checkedPaths: [roomId, "rooms/" + roomId]
+      });
+      return;
+    }
+
+    console.info("ルーム保存先を検出", { roomId, roomPath, format: detected.format });
+    const roomBeforeJoin = check.val();
+    if (roomBeforeJoin?.state !== "waiting") {
+      message("このルームは現在参加受付中ではありません。");
+      console.warn("参加前チェック：stateがwaitingではありません", { roomId, state: roomBeforeJoin?.state });
+      return;
+    }
+
+    message("参加処理中...");
+
+    let transactionAbortReason = "unknown";
+    const result = await runTransaction(targetRef, room => {
+      /*
+        Transaction updater can first receive null from local cache before
+        server data is synchronized. Returning undefined aborts immediately.
+        Returning null allows a harmless null write to be checked against the
+        server; if a room exists, the SDK can retry with its current value.
+      */
+      if (room === null) {
+        transactionAbortReason = "initial-null-or-missing";
+        return null;
+      }
+      if (room.state !== "waiting") {
+        transactionAbortReason = "not-waiting";
+        return;
+      }
+
+      room.players = room.players || {};
+
+      // 既に参加している同じIDなら名前のみ更新
+      if (room.players[myId]) {
+        room.players[myId].name = myName;
+        return room;
+      }
+
+      // 同時参加でも8人を超えないようtransaction内で判定
+      if (Object.keys(room.players).length >= 8) {
+        transactionAbortReason = "full";
+        return;
+      }
+
+      transactionAbortReason = "joined";
+      room.players[myId] = {
+        name: myName,
+        joinedAt: Date.now(),
+        card: null
+      };
+
+      return room;
+    }, { applyLocally: false });
+
+    if (!result.committed) {
+      const latest = result.snapshot.val();
+      let failureText = explainJoinFailure(latest);
+      if (transactionAbortReason === "not-waiting") failureText = "参加できません：ルームが募集状態ではありません。";
+      if (transactionAbortReason === "full") failureText = "参加できません：ルームが満員です（8人）。";
+      message(failureText);
+      console.warn("参加トランザクション未確定", {
+        roomId,
+        roomPath,
+        abortReason: transactionAbortReason,
+        snapshotExists: result.snapshot.exists(),
+        state: latest?.state,
+        playerCount: Object.keys(latest?.players || {}).length,
+        myIdAlreadyJoined: Boolean(latest?.players?.[myId]),
+        snapshot: latest
+      });
+      return;
+    }
+
+
+    const joinedRoom = result.snapshot.val();
+    if (!joinedRoom || !joinedRoom.players || !joinedRoom.players[myId]) {
+      message("参加結果を確認できませんでした。Firebaseの保存先とRulesを確認してください。");
+      console.warn("transaction committed but player missing", {
+        roomId,
+        roomPath,
+        transactionAbortReason,
+        snapshot: joinedRoom
+      });
+      return;
+    }
+
+    isHost = joinedRoom.host === myId;
+    enterRoom();
+  } catch (e) {
+    console.error("参加エラー詳細:", e);
+    const code = e?.code || "unknown";
+    if (code.includes("permission-denied")) {
+      message("permission_denied：Realtime Databaseの読み書きルールが参加者に許可されていません。");
+    } else {
+      message("参加エラー (" + code + "): " + (e?.message || String(e)));
+      console.error("参加エラー時の参照情報", { roomId, path: roomPath, code, message: e?.message });
+    }
+  } finally {
+    busy = false;
+    $("joinBtn").disabled = false;
+    $("createBtn").disabled = false;
+  }
+};
+
+/* 入室 */
+function enterRoom() {
+  $("lobby").classList.add("hidden");
+  $("gamePanel").classList.remove("hidden");
+  $("roomCode").textContent = roomId;
+
+  if (roomListener) roomListener();
+
+  roomListener = onValue(roomRef(), snapshot => {
+    if (!snapshot.exists()) {
+      status("ルームが終了しました。");
+      return;
+    }
+
+    render(snapshot.val());
+  }, error => {
+    console.error("ルーム同期エラー:", error);
+    status("同期エラー: " + (error.code || error.message || "unknown"));
+  });
+}
+
+/* 描画 */
+function render(room) {
+  const players = room.players || {};
+  const ids = Object.keys(players);
+
+  $("players").innerHTML = "";
+
+  ids.forEach(id => {
+    const player = players[id];
+    const box = document.createElement("div");
+
+    box.className = "player" + (id === myId ? " me" : "");
+
+    const name = document.createElement("div");
+    name.className = "player-name";
+    name.textContent = player.name + (id === room.host ? " 👑" : "");
+
+    const meta = document.createElement("div");
+    meta.className = "player-meta";
+    meta.textContent = id === myId ? "あなた" : "プレイヤー";
+
+    box.appendChild(name);
+    box.appendChild(meta);
+
+    if (player.card && room.state === "finished") {
+      const card = document.createElement("div");
+      card.className = "card" + (player.card.color === "red" ? " red" : "");
+      card.textContent = player.card.symbol + player.card.value;
+      box.appendChild(card);
+    } else {
+      const card = document.createElement("div");
+      card.className = "card card-back";
+      card.textContent = "?";
+      box.appendChild(card);
+    }
+
+    $("players").appendChild(box);
+  });
+
+  isHost = room.host === myId;
+
+  if (room.state === "waiting") {
+    status("参加者募集中 · " + ids.length + " / 8人");
+    $("resultBox").classList.add("hidden");
+  }
+
+  if (room.state === "finished") {
+    status("ゲーム終了");
+    $("resultBox").classList.remove("hidden");
+    $("resultText").textContent = room.result || "";
+  }
+
+  $("startBtn").disabled =
+    !isHost || room.state !== "waiting" || ids.length < 2;
+
+  $("resetBtn").disabled =
+    !isHost || room.state !== "finished";
+}
+
+/* ゲーム開始 */
+$("startBtn").onclick = async () => {
+  if (!isHost || busy) return;
+
+  busy = true;
+
+  try {
+    const result = await runTransaction(roomRef(), room => {
+      if (!room || room.host !== myId || room.state !== "waiting") return;
+
+      const ids = Object.keys(room.players || {});
+
+      if (ids.length < 2 || ids.length > 8) return;
+
+      const deck = createDeck();
+
+      ids.forEach((id, i) => {
+        room.players[id].card = deck[i];
+      });
+
+      const maxRank = Math.max(
+        ...ids.map(id => room.players[id].card.rank)
+      );
+
+      const winners = ids
+        .filter(id => room.players[id].card.rank === maxRank)
+        .map(id => room.players[id].name);
+
+      room.state = "finished";
+      room.round = (room.round || 0) + 1;
+
+      room.result = winners.length > 1
+        ? "引き分け: " + winners.join(" / ")
+        : "勝者: " + winners[0];
+
+      room.finishedAt = Date.now();
+
+      return room;
+    });
+
+    if (!result.committed) {
+      status("開始できませんでした。");
+    }
+
+  } catch (e) {
+    console.error(e);
+    status("開始エラー");
+
+  } finally {
+    busy = false;
+  }
+};
+
+/* 再戦 */
+$("resetBtn").onclick = async () => {
+  if (!isHost || busy) return;
+
+  busy = true;
+
+  try {
+    const result = await runTransaction(roomRef(), room => {
+      if (!room || room.host !== myId || room.state !== "finished") return;
+
+      Object.values(room.players || {}).forEach(player => {
+        player.card = null;
+      });
+
+      room.state = "waiting";
+      room.result = "";
+      room.finishedAt = null;
+
+      return room;
+    });
+
+    if (!result.committed) {
+      status("再戦できませんでした。");
+    }
+
+  } catch (e) {
+    console.error(e);
+    status("再戦エラー");
+
+  } finally {
+    busy = false;
+  }
+};
+
+/* IDコピー */
+$("copyRoomBtn").onclick = async () => {
+  try {
+    await navigator.clipboard.writeText(roomId);
+    status("ルームIDをコピーしました。");
+  } catch {
+    status("コピーに失敗しました。");
+  }
+};
+
+/* 退出：roomPathを保持したまま同じルームノードを更新する。 */
+$("leaveBtn").onclick = async () => {
+  if (busy) return;
+
+  busy = true;
+
+  try {
+    await runTransaction(roomRef(), room => {
+      if (!room || !room.players || !room.players[myId]) return;
+
+      delete room.players[myId];
+
+      const ids = Object.keys(room.players);
+
+      if (ids.length === 0) {
+        room.state = "closed";
+        room.result = "全員退出しました。";
+        return room;
+      }
+
+      if (room.host === myId) {
+        room.host = ids[0];
+      }
+
+      if (room.state === "finished" && ids.length < 2) {
+        room.state = "waiting";
+        room.result = "人数不足のため終了しました。";
+
+        ids.forEach(id => {
+          room.players[id].card = null;
+        });
+      }
+
+      return room;
+    });
+
+    if (roomListener) {
+      roomListener();
+      roomListener = null;
+    }
+
+    location.reload();
+
+  } catch (e) {
+    console.error(e);
+    status("退出エラー");
+
+  } finally {
+    busy = false;
+  }
+};
+
+
+/* 入力されたルームIDは参加ボタンでも再正規化されます。
+   入力中はカーソル位置がずれる可能性を避けるため、ここでは値を書き換えません。 */
+$("roomInput").addEventListener("input", () => {
+  // IDは参加ボタン押下時にtrim・大文字化して処理します。
+});
+</script>
+</body>
+</html>
