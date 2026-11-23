@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0b2417">
+<title>Texas Hold'em Online</title>
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<header>
+  <h1>TEXAS HOLD'EM</h1>
+  <p>ONLINE · D / SB / BB · SIDE POTS · TABLE SEATS</p>
+</header>
+
+<main class="has-sticky-bar">
+  <section class="panel lobby-panel" id="lobby">
+    <h2>プレイヤー設定</h2>
+    <div class="form-group">
+      <label for="nameInput" class="field-label">プレイヤー名</label>
+      <input id="nameInput" maxlength="12" placeholder="プレイヤー名を入力" autocomplete="nickname">
+    </div>
+
+    <div class="form-group">
+      <span class="field-label">キャラクター選択</span>
+      <div class="avatar-picker" id="avatarPicker" role="radiogroup" aria-label="キャラクター選択"></div>
+    </div>
+
+    <div class="lobby-actions">
+      <button id="createBtn" type="button">ルームを作成</button>
+    </div>
+
+    <hr class="divider">
+
+    <div class="form-group">
+      <label for="roomInput" class="field-label">ルームIDで参加</label>
+      <input id="roomInput" maxlength="8" placeholder="ルームID（例: AB12CD）" autocapitalize="characters" spellcheck="false">
+      <div><button id="joinBtn" class="secondary" type="button">ルームに参加</button></div>
+    </div>
+
+    <p id="message" class="muted" role="status" aria-live="polite"></p>
+  </section>
+
+  <section class="panel hidden" id="gamePanel">
+    <div class="mobile-hud-bar" id="mobileHudBar">
+      <div class="hud-chip-item"><span class="hud-lbl">POT</span><strong id="hudPot">0</strong></div>
+      <div class="hud-chip-item"><span class="hud-lbl">基準</span><strong id="hudMaxBet">0</strong></div>
+      <div class="hud-chip-item"><span class="hud-lbl">所持</span><strong id="hudMyChips">1,000</strong></div>
+      <div class="hud-chip-item"><span class="hud-lbl">番</span><strong id="hudTurn">-</strong></div>
+    </div>
+
+    <div class="room-header">
+      <div class="room-code-block">
+        <h2>ゲームルーム</h2>
+        <div class="room-code-row">
+          <span class="muted room-sub">ID:</span>
+          <span class="room-code" id="roomCode"></span>
+          <button id="copyRoomBtn" class="secondary compact-btn" type="button">コピー</button>
+        </div>
+      </div>
+      <div class="room-header-side">
+        <p id="gameStatus" class="status">接続中...</p>
+      </div>
+    </div>
+
+    <div class="table-stage view-pane" id="tableStage" data-view-pane="table">
+      <div class="table-area">
+        <div class="pot-bar">
+          <div class="pot-pill">🟡 POT: <span id="potAmount">0</span> pt</div>
+          <div class="pot-pill">基準: <span id="maxBetAmount">0</span> pt</div>
+        </div>
+        <div class="side-pot-list" id="sidePotList"></div>
+        <h3>コミュニティカード</h3>
+        <div id="communityCards" class="cards"></div>
+        <p id="stageLabel">カード配布前</p>
+      </div>
+      <div class="seats-layer" id="players"></div>
+    </div>
+
+    <section class="panel my-hand-panel view-pane" id="myHandPanel" data-view-pane="table">
+      <h3>あなたの手札</h3>
+      <div id="myCards" class="cards"></div>
+      <p id="myHandRank" class="status"></p>
+    </section>
+
+    <section class="action-panel view-pane" id="actionPanel" data-view-pane="action">
+      <h3>プレイヤー行動</h3>
+      <p id="turnBanner" class="turn-banner">ゲーム開始後、行動ターンが表示されます。</p>
+      <div class="action-buttons">
+        <button id="checkOrCallBtn" type="button">チェック</button>
+        <button id="foldActionBtn" class="danger" type="button">フォールド</button>
+      </div>
+
+      <!-- 物理チップを押し込んでベットアクションを行うコントロール -->
+      <div class="physical-chip-station" id="physicalChipStation">
+        <div class="chip-rack-header">
+          <span class="chip-rack-title">物理チップラック（タップで積む → チップを押してベット確定）</span>
+          <button type="button" class="secondary mini-clear-btn" id="clearChipsBtn">クリア</button>
+        </div>
+
+        <div class="chip-rack" role="group" aria-label="賭けるチップを追加">
+          <button type="button" class="poker-chip chip-10" data-chip="10" aria-label="10ptチップを追加">
+            <span class="chip-inner"><span class="chip-val">+10</span><span class="chip-sub">PT</span></span>
+          </button>
+          <button type="button" class="poker-chip chip-25" data-chip="25" aria-label="25ptチップを追加">
+            <span class="chip-inner"><span class="chip-val">+25</span><span class="chip-sub">PT</span></span>
+          </button>
+          <button type="button" class="poker-chip chip-50" data-chip="50" aria-label="50ptチップを追加">
+            <span class="chip-inner"><span class="chip-val">+50</span><span class="chip-sub">PT</span></span>
+          </button>
+          <button type="button" class="poker-chip chip-100" data-chip="100" aria-label="100ptチップを追加">
+            <span class="chip-inner"><span class="chip-val">+100</span><span class="chip-sub">PT</span></span>
+          </button>
+          <button type="button" class="poker-chip chip-allin" id="allInSetBtn" aria-label="オールイン額をセット">
+            <span class="chip-inner"><span class="chip-val">ALL</span><span class="chip-sub">IN</span></span>
+          </button>
+        </div>
+
+        <div class="chip-push-stage">
+          <div class="chip-stack-preview" id="chipStackPreview" aria-live="polite">
+            <div class="stack-visual" id="stackVisual"></div>
+            <div class="stack-readout">
+              <div class="stack-label">選択中の合計ベット額</div>
+              <div class="stack-amount"><span id="selectedBetReadout">20</span> pt</div>
+            </div>
+          </div>
+
+          <!-- 物理チップを押してベット/レイズを確定するプッシュボタン -->
+          <button type="button" class="push-chip-trigger" id="pushChipActionBtn">
+            <span class="push-chip-disc" aria-hidden="true">
+              <span class="push-disc-ring">PUSH<br><span id="pushChipTargetLabel">20pt</span></span>
+            </span>
+            <span class="push-chip-text">
+              <strong id="pushActionVerb">チップを押してベット</strong>
+              <small id="pushActionSub">タップで押し込み確定</small>
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <div class="bet-controls">
+        <label for="betAmountInput" class="muted">合計ベット直接入力:</label>
+        <input id="betAmountInput" type="number" inputmode="numeric" min="1" step="10" value="20">
+        <button id="betOrRaiseBtn" class="secondary" type="button">ベット確定</button>
+      </div>
+      <p class="muted" id="actionHint">ゲーム開始後、順番にベット・コール・チェック・フォールドを選択できます。</p>
+    </section>
+
+    <section class="result hidden" id="resultBox">
+      <h2>ショーダウン結果</h2>
+      <p id="resultText"></p>
+    </section>
+
+    <!-- スマホ用ビュー切り替えタブ（卓・手札 / チップ・行動） -->
+    <div class="mobile-view-tabs" id="mobileViewTabs" role="tablist" aria-label="画面表示切替">
+      <button type="button" class="view-tab-btn active" role="tab" aria-selected="true" data-view-tab="table" id="tabTableBtn">
+        🃏 卓・手札
+      </button>
+      <button type="button" class="view-tab-btn" role="tab" aria-selected="false" data-view-tab="action" id="tabActionBtn">
+        🟡 チップ・行動 <span class="tab-turn-dot hidden" id="tabTurnDot" aria-hidden="true">!</span>
+      </button>
+    </div>
+
+    <!-- ドロワー＆モーダルを開くクイックツールバー -->
+    <div class="utility-bar" id="utilityBar">
+      <button type="button" class="secondary utility-btn" id="openRoomDrawerBtn">⚙️ ルーム・履歴</button>
+      <button type="button" class="secondary utility-btn" id="openHandsModalBtn">📖 役早見表</button>
+    </div>
+  </section>
+</main>
+
+<div class="mobile-quick-bar hidden" id="mobileQuickBar" aria-label="クイック行動バー">
+  <div class="mobile-quick-status" id="mobileQuickStatus">待機中</div>
+  <div class="mobile-quick-btns">
+    <button type="button" id="mobileCheckOrCallBtn">チェック</button>
+    <button type="button" id="mobileBetOrRaiseBtn" class="secondary">ベット</button>
+    <button type="button" id="mobileFoldBtn" class="danger">フォールド</button>
+  </div>
+</div>
+
+<footer>Texas Hold'em Online · D / SB / BB & Side Pots</footer>
+
+<script type="module" src="./game.js"></script>
+
+<!-- スライドドロワー：ルーム操作・ラウンド進行・ポット獲得履歴 -->
+<div class="drawer-backdrop hidden" id="drawerBackdrop" aria-hidden="true"></div>
+<aside class="side-drawer hidden" id="roomDrawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle">
+  <div class="drawer-header">
+    <h3 id="drawerTitle">ルーム操作・履歴</h3>
+    <button type="button" class="secondary compact-btn" id="closeDrawerBtn" aria-label="閉じる">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="drawer-section">
+      <h4>ラウンド管理</h4>
+      <div class="drawer-btn-stack">
+        <button id="startBtn" type="button">ゲーム開始・配布</button>
+        <button id="resetBtn" class="secondary" type="button">次のゲーム</button>
+        <button id="leaveBtn" class="danger" type="button">ルームから退出</button>
+      </div>
+      <p class="muted center-note">全員のベット額が揃い行動が完了すると、次のカード公開・ショーダウンへ自動進行します。</p>
+    </div>
+
+    <div class="drawer-section">
+      <h4>ポット獲得履歴</h4>
+      <div class="chip-history" id="chipHistory">
+        <ol class="chip-history-list" id="chipHistoryList"><li>まだ獲得履歴はありません。</li></ol>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- モーダル：テキサスホールデム 役早見表 -->
+<div class="modal-backdrop hidden" id="handsModalBackdrop" aria-hidden="true"></div>
+<div class="info-modal hidden" id="handsModal" role="dialog" aria-modal="true" aria-labelledby="handsModalTitle">
+  <div class="modal-header">
+    <h3 id="handsModalTitle">ポーカー役早見表（強い順）</h3>
+    <button type="button" class="secondary compact-btn" id="closeHandsModalBtn" aria-label="閉じる">✕</button>
+  </div>
+  <div class="modal-body">
+    <ul class="hand-rank-list">
+      <li><strong>ロイヤルフラッシュ</strong><span>A・K・Q・J・10 同スート</span></li>
+      <li><strong>ストレートフラッシュ</strong><span>連番5枚 同スート</span></li>
+      <li><strong>フォーカード</strong><span>同じ数字4枚</span></li>
+      <li><strong>フルハウス</strong><span>3枚＋2枚のペア</span></li>
+      <li><strong>フラッシュ</strong><span>同スート5枚</span></li>
+      <li><strong>ストレート</strong><span>連番5枚</span></li>
+      <li><strong>スリーカード</strong><span>同じ数字3枚</span></li>
+      <li><strong>ツーペア</strong><span>2種類のペア</span></li>
+      <li><strong>ワンペア</strong><span>同じ数字2枚</span></li>
+      <li><strong>ハイカード</strong><span>役なし（最も高いカード）</span></li>
+    </ul>
+  </div>
+</div>
+
+</body>
+</html>
