@@ -636,6 +636,58 @@ function actionLabelText(act) {
   })[act] || "未行動";
 }
 
+function renderChipStackVisual(amount) {
+  const visual = $("stackVisual");
+  if (!visual) return;
+  visual.innerHTML = "";
+  let rem = Math.max(0, Math.floor(Number(amount || 0)));
+  const denoms = [
+    { unit: 100, cls: "c100" },
+    { unit: 50,  cls: "c50" },
+    { unit: 25,  cls: "c25" },
+    { unit: 10,  cls: "c10" }
+  ];
+
+  denoms.forEach(d => {
+    const count = Math.min(6, Math.floor(rem / d.unit));
+    rem -= count * d.unit;
+    if (count > 0) {
+      const col = document.createElement("div");
+      col.className = "mini-stack-col";
+      for (let i = 0; i < count; i++) {
+        const disc = document.createElement("span");
+        disc.className = `mini-chip-disc ${d.cls}`;
+        col.appendChild(disc);
+      }
+      visual.appendChild(col);
+    }
+  });
+
+  if (!visual.children.length && amount > 0) {
+    const col = document.createElement("div");
+    col.className = "mini-stack-col";
+    const disc = document.createElement("span");
+    disc.className = "mini-chip-disc c10";
+    col.appendChild(disc);
+    visual.appendChild(col);
+  }
+}
+
+function updateChipReadout(room) {
+  const betInput = $("betAmountInput");
+  const val = Math.max(0, Math.floor(Number(betInput.value || 0)));
+  $("selectedBetReadout").textContent = val.toLocaleString("ja-JP");
+  $("pushChipTargetLabel").textContent = `${val.toLocaleString("ja-JP")}pt`;
+  renderChipStackVisual(val);
+
+  const toCall = room ? Math.max(0, Number(room.maxBet || 0) - Number(room.players?.[myId]?.roundBet || 0)) : 0;
+  const isRaise = toCall > 0;
+  $("pushActionVerb").textContent = isRaise ? "チップを押してレイズ" : "チップを押してベット";
+  $("pushActionSub").textContent = isRaise
+    ? `合計 ${val.toLocaleString("ja-JP")}pt まで押し込み確定`
+    : `合計 ${val.toLocaleString("ja-JP")}pt を卓へ押し込み確定`;
+}
+
 function syncMobileQuickBar(room, ctrl) {
   const bar = $("mobileQuickBar");
   const statusEl = $("mobileQuickStatus");
@@ -659,7 +711,7 @@ function syncMobileQuickBar(room, ctrl) {
   } else if (room.activeTurn === myId) {
     statusEl.textContent = ctrl.toCall > 0
       ? `あなたの番！ コール ${ctrl.toCall}pt / 基準 ${ctrl.maxBet}pt`
-      : "あなたの番！ チェックまたはベットを選択";
+      : "あなたの番！ チェックまたはチップを押してベット";
   } else {
     statusEl.textContent = `${activeName || "他プレイヤー"} の行動中...`;
   }
@@ -691,15 +743,16 @@ function setControls(room) {
 
   const checkOrCallBtn = $("checkOrCallBtn");
   const betOrRaiseBtn = $("betOrRaiseBtn");
+  const pushChipBtn = $("pushChipActionBtn");
   const betInput = $("betAmountInput");
 
   if (toCall > 0) {
     const callPay = Math.min(toCall, myChips);
     checkOrCallBtn.textContent = callPay >= myChips ? `オールインでコール (${callPay}pt)` : `コール (${callPay}pt)`;
-    betOrRaiseBtn.textContent = "レイズ";
+    betOrRaiseBtn.textContent = "レイズ確定";
   } else {
     checkOrCallBtn.textContent = "チェック";
-    betOrRaiseBtn.textContent = "ベット";
+    betOrRaiseBtn.textContent = "ベット確定";
   }
 
   checkOrCallBtn.disabled = !canAct;
@@ -707,9 +760,11 @@ function setControls(room) {
 
   const canRaise = canAct && (myRoundBet + myChips > maxBet);
   betOrRaiseBtn.disabled = !canRaise;
+  pushChipBtn.disabled = !canRaise;
+  $("clearChipsBtn").disabled = !canRaise;
   betInput.disabled = !canRaise;
   $("allInSetBtn").disabled = !canRaise;
-  document.querySelectorAll(".quick-bet-btn").forEach(btn => btn.disabled = !canRaise);
+  document.querySelectorAll(".poker-chip[data-chip]").forEach(btn => btn.disabled = !canRaise);
 
   if (canRaise) {
     const minTarget = maxBet + BB_AMOUNT;
@@ -719,6 +774,8 @@ function setControls(room) {
       betInput.value = Math.min(minTarget, maxTarget);
     }
   }
+
+  updateChipReadout(room);
 
   const info = { isLive, isMyActiveTurn, isFolded, isAllIn, alreadyActed, canAct, toCall, maxBet };
   syncMobileQuickBar(room, info);
@@ -887,9 +944,9 @@ function render(room) {
         if (!ctrl.canAct) {
           $("actionHint").textContent = `押せない理由: folded=${ctrl.isFolded}, allIn=${ctrl.isAllIn}, acted=${ctrl.alreadyActed}, busy=${busy}`;
         } else if (ctrl.toCall > 0) {
-          $("actionHint").textContent = `現在 ${ctrl.maxBet}pt のベットが出ています。コール（あと ${ctrl.toCall}pt）、レイズ、またはフォールドを選んでください。`;
+          $("actionHint").textContent = `現在 ${ctrl.maxBet}pt のベットが出ています。コール（あと ${ctrl.toCall}pt）、チップを積んで押すレイズ、またはフォールドを選んでください。`;
         } else {
-          $("actionHint").textContent = "まだベットは出ていません。チェック、ベット、またはフォールドを選んでください。";
+          $("actionHint").textContent = "まだベットは出ていません。チェック、チップを積んで押すベット、またはフォールドを選んでください。";
         }
       } else if (room.activeTurn) {
         $("turnBanner").textContent = activeName + " の行動中です。";
@@ -1220,28 +1277,48 @@ function triggerCheckOrCall() {
 }
 
 function triggerBetOrRaise() {
+  const pushBtn = $("pushChipActionBtn");
+  if (pushBtn && !pushBtn.disabled) {
+    pushBtn.classList.add("chip-pushed");
+    setTimeout(() => pushBtn.classList.remove("chip-pushed"), 180);
+  }
   const target = Number($("betAmountInput").value || 0);
   submitBetAction("raise", target);
 }
 
 $("checkOrCallBtn").addEventListener("click", triggerCheckOrCall);
 $("betOrRaiseBtn").addEventListener("click", triggerBetOrRaise);
+$("pushChipActionBtn").addEventListener("click", triggerBetOrRaise);
 $("foldActionBtn").addEventListener("click", () => submitBetAction("fold"));
 
 $("mobileCheckOrCallBtn").addEventListener("click", triggerCheckOrCall);
 $("mobileBetOrRaiseBtn").addEventListener("click", triggerBetOrRaise);
 $("mobileFoldBtn").addEventListener("click", () => submitBetAction("fold"));
 
-document.querySelectorAll(".quick-bet-btn").forEach(btn => {
+$("betAmountInput").addEventListener("input", () => updateChipReadout(latestRoom));
+
+$("clearChipsBtn").addEventListener("click", () => {
+  if (!latestRoom) return;
+  const me = latestRoom.players?.[myId];
+  const maxBet = Number(latestRoom.maxBet || 0);
+  const maxPossible = me ? Number(me.roundBet || 0) + Number(me.chips ?? 1000) : maxBet + BB_AMOUNT;
+  const minReset = maxBet > 0 ? Math.min(maxBet + BB_AMOUNT, maxPossible) : Math.min(BB_AMOUNT, maxPossible);
+  $("betAmountInput").value = minReset;
+  updateChipReadout(latestRoom);
+});
+
+document.querySelectorAll(".poker-chip[data-chip]").forEach(btn => {
   btn.addEventListener("click", () => {
     if (!latestRoom) return;
     const me = latestRoom.players?.[myId];
     if (!me) return;
     const maxBet = Number(latestRoom.maxBet || 0);
     const maxPossible = Number(me.roundBet || 0) + Number(me.chips ?? 1000);
-    const base = Math.max(Number($("betAmountInput").value || 0), maxBet);
-    const add = Number(btn.dataset.add || 0);
+    const current = Number($("betAmountInput").value || 0);
+    const base = current > maxBet ? current : maxBet;
+    const add = Number(btn.dataset.chip || 0);
     $("betAmountInput").value = Math.min(base + add, maxPossible);
+    updateChipReadout(latestRoom);
   });
 });
 
@@ -1250,6 +1327,8 @@ $("allInSetBtn").addEventListener("click", () => {
   const me = latestRoom.players?.[myId];
   if (!me) return;
   $("betAmountInput").value = Number(me.roundBet || 0) + Number(me.chips ?? 1000);
+  updateChipReadout(latestRoom);
 });
 
 renderAvatarPicker();
+updateChipReadout(null);
