@@ -576,6 +576,265 @@ button:disabled {
   width: 100%;
 }
 
+/* 物理チップステーション */
+.physical-chip-station {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 50% 20%, rgba(36, 107, 66, 0.35), rgba(7, 22, 14, 0.92));
+  border: 1px solid #396649;
+}
+
+.chip-rack-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.chip-rack-title {
+  font-size: 12px;
+  font-weight: bold;
+  color: #d6eadb;
+  text-align: left;
+}
+
+.mini-clear-btn {
+  min-height: 32px;
+  padding: 4px 10px;
+  font-size: 11px;
+  margin: 0;
+}
+
+.chip-rack {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  justify-items: center;
+  align-items: center;
+  padding: 6px 2px;
+}
+
+/* 立体的なカジノチップボタン */
+.poker-chip {
+  position: relative;
+  width: 62px;
+  height: 62px;
+  min-height: 62px;
+  padding: 0;
+  margin: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.75);
+  box-shadow:
+    0 5px 0 rgba(0, 0, 0, 0.55),
+    0 8px 14px rgba(0, 0, 0, 0.45),
+    inset 0 2px 3px rgba(255, 255, 255, 0.45);
+  transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.12s ease;
+}
+
+.poker-chip::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  border: 2px dashed rgba(255, 255, 255, 0.78);
+  pointer-events: none;
+}
+
+.poker-chip:active:not(:disabled) {
+  transform: translateY(4px) scale(0.95);
+  box-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.6),
+    0 3px 6px rgba(0, 0, 0, 0.4),
+    inset 0 2px 4px rgba(0, 0, 0, 0.35);
+}
+
+.chip-inner {
+  position: relative;
+  z-index: 1;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.24);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.05;
+}
+
+.chip-val {
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.chip-sub {
+  font-size: 8px;
+  letter-spacing: 0.4px;
+  opacity: 0.9;
+}
+
+.chip-10 {
+  background: radial-gradient(circle at 35% 30%, #4da3ff, #1d5fa8);
+}
+
+.chip-25 {
+  background: radial-gradient(circle at 35% 30%, #41c97b, #197a44);
+}
+
+.chip-50 {
+  background: radial-gradient(circle at 35% 30%, #ff6b6b, #a82424);
+}
+
+.chip-100 {
+  background: radial-gradient(circle at 35% 30%, #ffd452, #b88414);
+  color: #1c190b;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.chip-100::before {
+  border-color: rgba(28, 25, 11, 0.55);
+}
+
+.chip-allin {
+  background: radial-gradient(circle at 35% 30%, #b77dff, #5c289e);
+}
+
+/* チップスタック表示＆押し込み確定ゾーン */
+.chip-push-stage {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed rgba(132, 180, 148, 0.35);
+}
+
+.chip-stack-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: #081a10;
+  border: 1px solid #2d5239;
+  min-height: 68px;
+}
+
+.stack-visual {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  min-width: 58px;
+  min-height: 44px;
+}
+
+.mini-stack-col {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  width: 16px;
+}
+
+.mini-chip-disc {
+  width: 16px;
+  height: 6px;
+  border-radius: 999px;
+  margin-top: -2px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+}
+
+.mini-chip-disc.c10 { background: #3b8ee6; }
+.mini-chip-disc.c25 { background: #32b86c; }
+.mini-chip-disc.c50 { background: #e85454; }
+.mini-chip-disc.c100 { background: #f2c438; }
+
+.stack-readout {
+  text-align: left;
+}
+
+.stack-label {
+  font-size: 11px;
+  color: #9cb5a2;
+}
+
+.stack-amount {
+  font-size: 18px;
+  font-weight: 900;
+  color: #f0d98b;
+}
+
+/* 物理チップを押してアクション確定するメインボタン */
+.push-chip-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 8px 14px 8px 10px;
+  min-height: 66px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #e7cf85 0%, #c4a652 100%);
+  color: #162419;
+  box-shadow:
+    0 5px 0 #7b6424,
+    0 8px 16px rgba(0, 0, 0, 0.45);
+  transition: transform 0.11s ease, box-shadow 0.11s ease, filter 0.12s ease;
+}
+
+.push-chip-trigger:active:not(:disabled),
+.push-chip-trigger.chip-pushed:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow:
+    0 1px 0 #7b6424,
+    0 3px 6px rgba(0, 0, 0, 0.4);
+}
+
+.push-chip-disc {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #c83e3e, #7d1d1d);
+  border: 2px dashed #fff3c4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1.05;
+  text-align: center;
+  flex-shrink: 0;
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.35), 0 2px 5px rgba(0, 0, 0, 0.45);
+}
+
+.push-chip-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  line-height: 1.25;
+}
+
+.push-chip-text strong {
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.push-chip-text small {
+  font-size: 10px;
+  color: #2d3d2f;
+  font-weight: 700;
+}
+
 .bet-controls {
   display: flex;
   justify-content: center;
@@ -592,20 +851,6 @@ button:disabled {
   margin: 0;
   text-align: center;
   font-weight: bold;
-}
-
-.quick-bets {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 6px;
-  margin-top: 8px;
-}
-
-.quick-bets button {
-  margin: 0;
-  padding: 8px 6px;
-  font-size: 12px;
-  min-height: 40px;
 }
 
 .turn-banner {
@@ -811,6 +1056,35 @@ footer {
 
   .player .suit {
     font-size: 10px;
+  }
+
+  .chip-rack {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .poker-chip {
+    width: 52px;
+    height: 52px;
+    min-height: 52px;
+  }
+
+  .chip-inner {
+    width: 34px;
+    height: 34px;
+  }
+
+  .chip-val {
+    font-size: 11px;
+  }
+
+  .chip-push-stage {
+    grid-template-columns: 1fr;
+  }
+
+  .push-chip-trigger {
+    width: 100%;
+    justify-content: center;
   }
 
   .bet-controls {
