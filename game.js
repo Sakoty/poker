@@ -474,7 +474,8 @@ function settleShowdown(room) {
     });
     room.chipHistory = room.chipHistory.slice(-20);
   }
-  room.result = summaries.length > 0 ? summaries.join("\n") : "分配対象がありませんでした";
+  room.result = summaries.length > 0 ? summaries.join("
+") : "分配対象がありませんでした";
   room.stage = "showdown";
   room.activeTurn = null;
   room.actions = {};
@@ -637,6 +638,41 @@ function actionLabelText(act) {
   })[act] || "未行動";
 }
 
+function syncMobileQuickBar(room, ctrl) {
+  const bar = $("mobileQuickBar");
+  const statusEl = $("mobileQuickStatus");
+  const mCheck = $("mobileCheckOrCallBtn");
+  const mBet = $("mobileBetOrRaiseBtn");
+  const mFold = $("mobileFoldBtn");
+  if (!bar || !statusEl || !mCheck || !mBet || !mFold) return;
+
+  const inRoom = room && !$("gamePanel").classList.contains("hidden");
+  if (!inRoom) {
+    bar.classList.add("hidden");
+    return;
+  }
+
+  bar.classList.remove("hidden");
+  const players = room.players || {};
+  const activeName = room.activeTurn ? (players[room.activeTurn]?.name || "プレイヤー") : "";
+
+  if (!ctrl.isLive) {
+    statusEl.textContent = room.stage === "waiting" ? "開始待ち" : "ラウンド終了";
+  } else if (room.activeTurn === myId) {
+    statusEl.textContent = ctrl.toCall > 0
+      ? `あなたの番！ コール ${ctrl.toCall}pt / 基準 ${ctrl.maxBet}pt`
+      : "あなたの番！ チェックまたはベットを選択";
+  } else {
+    statusEl.textContent = `${activeName || "他プレイヤー"} の行動中...`;
+  }
+
+  mCheck.textContent = $("checkOrCallBtn").textContent;
+  mBet.textContent = $("betOrRaiseBtn").textContent;
+  mCheck.disabled = $("checkOrCallBtn").disabled;
+  mBet.disabled = $("betOrRaiseBtn").disabled;
+  mFold.disabled = $("foldActionBtn").disabled;
+}
+
 function setControls(room) {
   const host = room.host === myId, stage = room.stage || "waiting";
   const liveStages = ["preflop", "flop", "turn", "river"];
@@ -686,7 +722,9 @@ function setControls(room) {
     }
   }
 
-  return { isLive, isMyActiveTurn, isFolded, isAllIn, alreadyActed, canAct, toCall, maxBet };
+  const info = { isLive, isMyActiveTurn, isFolded, isAllIn, alreadyActed, canAct, toCall, maxBet };
+  syncMobileQuickBar(room, info);
+  return info;
 }
 
 function buildPlayerCardElement(id, p, room, stage) {
@@ -1176,20 +1214,26 @@ $("leaveBtn").onclick = async () => {
   }
 };
 
-$("checkOrCallBtn").addEventListener("click", () => {
+function triggerCheckOrCall() {
   if (!latestRoom) return;
   const maxBet = Number(latestRoom.maxBet || 0);
   const myRoundBet = Number(latestRoom.players?.[myId]?.roundBet || 0);
   const toCall = Math.max(0, maxBet - myRoundBet);
   submitBetAction(toCall > 0 ? "call" : "check");
-});
+}
 
-$("betOrRaiseBtn").addEventListener("click", () => {
+function triggerBetOrRaise() {
   const target = Number($("betAmountInput").value || 0);
   submitBetAction("raise", target);
-});
+}
 
+$("checkOrCallBtn").addEventListener("click", triggerCheckOrCall);
+$("betOrRaiseBtn").addEventListener("click", triggerBetOrRaise);
 $("foldActionBtn").addEventListener("click", () => submitBetAction("fold"));
+
+$("mobileCheckOrCallBtn").addEventListener("click", triggerCheckOrCall);
+$("mobileBetOrRaiseBtn").addEventListener("click", triggerBetOrRaise);
+$("mobileFoldBtn").addEventListener("click", () => submitBetAction("fold"));
 
 document.querySelectorAll(".quick-bet-btn").forEach(btn => {
   btn.addEventListener("click", () => {
