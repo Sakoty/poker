@@ -84,6 +84,15 @@
     </section>
 
     <section class="action-panel view-pane" id="actionPanel" data-view-pane="action">
+      <!-- アクションタブでもコミュニティカードを確認できるコンパクト表示 -->
+      <div class="action-community-strip" id="actionCommunityStrip">
+        <div class="action-community-header">
+          <span class="action-community-title">コミュニティカード</span>
+          <span class="action-community-stage" id="actionStageLabel">カード配布前</span>
+        </div>
+        <div id="actionCommunityCards" class="cards mini-community-cards"></div>
+      </div>
+
       <h3>プレイヤー行動</h3>
       <p id="turnBanner" class="turn-banner">ゲーム開始後、行動ターンが表示されます。</p>
       <div class="action-buttons">
