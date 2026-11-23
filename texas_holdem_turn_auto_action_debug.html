@@ -551,24 +551,25 @@ function getSeatOrder(room){
   });
   return valid;
 }
-function getSeatByOffset(seats,startIndex,offset){
-  if(!seats.length)return null;
-  const len=seats.length;
-  return seats[(((startIndex+offset)%len)+len)%len];
-}
-function getNextActingId(room,startId){
-  const players=room.players||{};
-  const seats=getSeatOrder(room);
-  if(!seats.length)return null;
-  const startIdx=Math.max(0,seats.indexOf(startId));
-  for(let offset=1;offset<=seats.length;offset++){
-    const candidate=getSeatByOffset(seats,startIdx,offset);
-    const p=players[candidate];
-    if(p&&!p.folded&&!p.allIn){
-      return candidate;
+function getNextActingId(room, startId) {
+  const players = room.players || {};
+  const seats = getSeatOrder(room);
+  const actingSeats = seats.filter(id => {
+    const p = players[id];
+    return p && !p.folded && !p.allIn;
+  });
+  if (!actingSeats.length) return null;
+
+  const startIdx = seats.indexOf(startId);
+  if (startIdx >= 0) {
+    for (let offset = 1; offset <= seats.length; offset++) {
+      const candidate = getSeatByOffset(seats, startIdx, offset);
+      if (actingSeats.includes(candidate)) {
+        return candidate;
+      }
     }
   }
-  return null;
+  return actingSeats[0];
 }
 function postBlind(room,playerId,amount,label){
   const p=room.players?.[playerId];
@@ -600,17 +601,18 @@ function canActPlayerIds(room){
   const players=room.players||{};
   return Object.keys(players).filter(id=>!players[id].folded&&!players[id].allIn);
 }
-function startBettingRound(room){
-  const players=room.players||{};
-  Object.keys(players).forEach(id=>{
-    players[id].roundBet=0;
+function startBettingRound(room) {
+  const players = room.players || {};
+  Object.keys(players).forEach(id => {
+    players[id].roundBet = 0;
   });
-  room.maxBet=0;
-  room.actions={};
+  room.maxBet = 0;
+  room.actions = {};
 
-  const seats=getSeatOrder(room);
-  room.turnOrder=seats.filter(id=>players[id]&&!players[id].folded);
-  room.activeTurn=getNextActingId(room,room.dealerId);
+  const seats = getSeatOrder(room);
+  room.turnOrder = seats.filter(id => players[id] && !players[id].folded);
+  const nextId = getNextActingId(room, room.dealerId);
+  room.activeTurn = nextId || room.turnOrder[0] || null;
 }
 function finishByFold(room,remaining){
   const players=room.players||{};
