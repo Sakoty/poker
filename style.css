@@ -1152,3 +1152,497 @@ footer {
     font-size: 12px;
   }
 }
+/* ===== スマホ（〜600px）で1画面に情報を凝縮するレイアウト ===== */
+.mobile-hud-bar {
+  display: none;
+}
+
+.chip-history summary {
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 13px;
+  color: #e0cb8a;
+  list-style: none;
+}
+
+.chip-history summary::-webkit-details-marker {
+  display: none;
+}
+
+@media (max-width: 600px) {
+  header {
+    padding: 6px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  h1 {
+    font-size: 16px;
+    letter-spacing: 1.5px;
+  }
+
+  header p {
+    margin: 0;
+    font-size: 9px;
+    letter-spacing: 0.2px;
+    text-align: right;
+  }
+
+  main,
+  main.has-sticky-bar {
+    padding: 6px 6px 12px;
+  }
+
+  .panel {
+    padding: 8px 8px;
+    border-radius: 10px;
+    margin-bottom: 7px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.28);
+  }
+
+  /* 1行サマリーHUD（POT / 基準 / 所持 / ターン） */
+  .mobile-hud-bar {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+    margin-bottom: 6px;
+    padding: 5px 6px;
+    border-radius: 8px;
+    background: #071910;
+    border: 1px solid #396649;
+  }
+
+  .hud-chip-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 3px;
+    border-radius: 6px;
+    background: rgba(24, 59, 38, 0.72);
+    min-width: 0;
+  }
+
+  .hud-lbl {
+    font-size: 9px;
+    color: #9cb5a2;
+    line-height: 1.1;
+  }
+
+  .hud-chip-item strong {
+    font-size: 12px;
+    color: #f0d98b;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  .room-header {
+    gap: 4px 8px;
+    margin-bottom: 6px;
+  }
+
+  .room-code-block h2 {
+    display: none;
+  }
+
+  .room-code {
+    font-size: 14px;
+    letter-spacing: 1.5px;
+  }
+
+  .compact-btn {
+    min-height: 26px;
+    padding: 3px 8px;
+    font-size: 10px;
+  }
+
+  .room-header-side {
+    width: auto;
+    text-align: right;
+  }
+
+  #gameStatus {
+    margin: 0;
+    font-size: 11px;
+  }
+
+  /* テーブル＆コミュニティカードをコンパクト化 */
+  .table-stage {
+    padding: 6px;
+    margin: 6px 0 8px;
+    gap: 6px;
+    border-radius: 12px;
+  }
+
+  .table-area {
+    min-height: 0;
+    padding: 8px 8px;
+    border-radius: 14px;
+    border-width: 3px;
+  }
+
+  .table-area h3 {
+    margin: 2px 0 4px;
+    font-size: 11px;
+  }
+
+  .pot-bar {
+    gap: 4px;
+    margin-bottom: 3px;
+  }
+
+  .pot-pill {
+    font-size: 10px;
+    padding: 2px 7px;
+  }
+
+  .side-pot-list {
+    min-height: 0;
+    margin-bottom: 3px;
+    gap: 3px;
+  }
+
+  .side-pot-tag {
+    font-size: 9px;
+    padding: 1px 5px;
+  }
+
+  .cards {
+    min-height: 54px;
+    gap: 4px;
+  }
+
+  .playing-card,
+  .empty-card {
+    width: 38px;
+    height: 54px;
+    padding: 3px 4px;
+    border-radius: 6px;
+  }
+
+  .rank {
+    font-size: 11px;
+  }
+
+  .suit {
+    font-size: 12px;
+  }
+
+  #stageLabel {
+    margin: 4px 0 0;
+    font-size: 10px;
+  }
+
+  /* プレイヤー席を4列コンパクトグリッドで高さを節約 */
+  .seats-layer {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .player {
+    padding: 4px 4px;
+    border-radius: 8px;
+  }
+
+  .player-avatar {
+    width: 22px;
+    height: 22px;
+    font-size: 13px;
+    margin-bottom: 2px;
+  }
+
+  .player-name {
+    font-size: 10px;
+    line-height: 1.15;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .player-meta {
+    font-size: 8.5px;
+    margin-top: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .chip-count {
+    margin-top: 2px;
+    padding: 1px 5px;
+    font-size: 9.5px;
+  }
+
+  .chip-icon {
+    font-size: 10px;
+  }
+
+  .round-bet-badge,
+  .hand-bet-badge {
+    font-size: 8.5px;
+    line-height: 1.15;
+    margin-top: 1px;
+  }
+
+  .player .cards {
+    min-height: 26px;
+    gap: 2px;
+    margin-top: 2px;
+  }
+
+  .player .playing-card {
+    width: 18px;
+    height: 26px;
+    padding: 1px;
+    border-radius: 3px;
+  }
+
+  .player .playing-card.back {
+    font-size: 8px;
+    border-width: 1px;
+  }
+
+  .player .rank {
+    font-size: 7.5px;
+  }
+
+  .player .suit {
+    font-size: 8px;
+  }
+
+  .player .status {
+    font-size: 8.5px;
+    margin-top: 2px;
+  }
+
+  /* 自分の手札とアクションをコンパクト化 */
+  .my-hand-panel {
+    padding: 7px 8px;
+    margin-bottom: 7px;
+  }
+
+  .my-hand-panel h3 {
+    font-size: 11px;
+    margin: 0 0 4px;
+  }
+
+  .my-hand-panel .cards {
+    min-height: 54px;
+  }
+
+  .my-hand-panel .playing-card,
+  .my-hand-panel .empty-card {
+    width: 40px;
+    height: 56px;
+  }
+
+  .my-hand-panel .rank {
+    font-size: 12px;
+  }
+
+  .my-hand-panel .suit {
+    font-size: 13px;
+  }
+
+  #myHandRank {
+    margin: 3px 0 0;
+    font-size: 11px;
+  }
+
+  .action-panel {
+    margin-top: 6px;
+    padding: 8px;
+    border-radius: 10px;
+  }
+
+  .action-panel h3 {
+    display: none;
+  }
+
+  .turn-banner {
+    margin: 0 0 5px;
+    padding: 5px 8px;
+    font-size: 11px;
+    border-radius: 6px;
+  }
+
+  button {
+    min-height: 34px;
+    padding: 5px 8px;
+    font-size: 11px;
+    border-radius: 8px;
+    margin: 2px;
+  }
+
+  .action-buttons {
+    gap: 5px;
+    margin-top: 4px;
+  }
+
+  .physical-chip-station {
+    margin-top: 6px;
+    padding: 7px;
+    border-radius: 10px;
+  }
+
+  .chip-rack-header {
+    margin-bottom: 5px;
+  }
+
+  .chip-rack-title {
+    font-size: 10px;
+  }
+
+  .mini-clear-btn {
+    min-height: 24px;
+    padding: 2px 7px;
+    font-size: 10px;
+  }
+
+  .chip-rack {
+    gap: 4px;
+    padding: 2px 0;
+  }
+
+  .poker-chip {
+    width: 42px;
+    height: 42px;
+    min-height: 42px;
+    box-shadow:
+      0 3px 0 rgba(0, 0, 0, 0.55),
+      0 5px 8px rgba(0, 0, 0, 0.4),
+      inset 0 1px 2px rgba(255, 255, 255, 0.45);
+  }
+
+  .poker-chip::before {
+    inset: 3px;
+    border-width: 1.5px;
+  }
+
+  .chip-inner {
+    width: 28px;
+    height: 28px;
+  }
+
+  .chip-val {
+    font-size: 9.5px;
+  }
+
+  .chip-sub {
+    display: none;
+  }
+
+  .chip-push-stage {
+    grid-template-columns: 1fr auto;
+    gap: 6px;
+    margin-top: 6px;
+    padding-top: 6px;
+  }
+
+  .chip-stack-preview {
+    min-height: 44px;
+    padding: 4px 8px;
+    gap: 8px;
+  }
+
+  .stack-visual {
+    min-width: 40px;
+    min-height: 30px;
+  }
+
+  .stack-amount {
+    font-size: 14px;
+  }
+
+  .push-chip-trigger {
+    width: auto;
+    min-height: 44px;
+    padding: 4px 10px 4px 6px;
+    gap: 6px;
+    border-radius: 10px;
+  }
+
+  .push-chip-disc {
+    width: 34px;
+    height: 34px;
+    font-size: 8px;
+  }
+
+  .push-chip-text strong {
+    font-size: 11px;
+  }
+
+  .push-chip-text small {
+    display: none;
+  }
+
+  .bet-controls {
+    margin-top: 6px;
+    padding-top: 6px;
+    gap: 4px;
+  }
+
+  .bet-controls label {
+    font-size: 10px;
+  }
+
+  .bet-controls input {
+    min-height: 32px;
+    padding: 4px 6px;
+    font-size: 12px;
+  }
+
+  .bet-controls button {
+    min-height: 32px;
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+
+  #actionHint,
+  .center-note {
+    display: none;
+  }
+
+  .action-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+    margin-top: 6px;
+  }
+
+  .lobby-actions button,
+  #joinBtn,
+  .action-row button {
+    width: 100%;
+    margin: 0;
+  }
+
+  .chip-history {
+    margin-top: 6px;
+    padding: 7px 10px;
+    border-radius: 8px;
+  }
+
+  .chip-history summary {
+    font-size: 11px;
+  }
+
+  .chip-history-list {
+    font-size: 11px;
+    padding-left: 16px;
+  }
+
+  footer {
+    padding: 8px 8px 14px;
+    font-size: 10px;
+  }
+
+  .mobile-quick-bar {
+    display: none !important;
+  }
+}
