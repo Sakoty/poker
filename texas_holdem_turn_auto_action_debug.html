@@ -551,6 +551,11 @@ function getSeatOrder(room){
   });
   return valid;
 }
+function getSeatByOffset(seats,startIndex,offset){
+  if(!seats.length)return null;
+  const len=seats.length;
+  return seats[(((startIndex+offset)%len)+len)%len];
+}
 function getNextActingId(room, startId) {
   const players = room.players || {};
   const seats = getSeatOrder(room);
