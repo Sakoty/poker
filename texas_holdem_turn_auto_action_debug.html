@@ -556,20 +556,20 @@ function getSeatByOffset(seats,startIndex,offset){
   const len=seats.length;
   return seats[(((startIndex+offset)%len)+len)%len];
 }
-function getNextActingId(room, startId) {
-  const players = room.players || {};
-  const seats = getSeatOrder(room);
-  const actingSeats = seats.filter(id => {
-    const p = players[id];
-    return p && !p.folded && !p.allIn;
+function getNextActingId(room,startId){
+  const players=room.players||{};
+  const seats=getSeatOrder(room);
+  const actingSeats=seats.filter(id=>{
+    const p=players[id];
+    return p&&!p.folded&&!p.allIn;
   });
-  if (!actingSeats.length) return null;
+  if(!actingSeats.length)return null;
 
-  const startIdx = seats.indexOf(startId);
-  if (startIdx >= 0) {
-    for (let offset = 1; offset <= seats.length; offset++) {
-      const candidate = getSeatByOffset(seats, startIdx, offset);
-      if (actingSeats.includes(candidate)) {
+  const startIdx=seats.indexOf(startId);
+  if(startIdx>=0){
+    for(let offset=1;offset<=seats.length;offset++){
+      const candidate=getSeatByOffset(seats,startIdx,offset);
+      if(actingSeats.includes(candidate)){
         return candidate;
       }
     }
@@ -606,18 +606,18 @@ function canActPlayerIds(room){
   const players=room.players||{};
   return Object.keys(players).filter(id=>!players[id].folded&&!players[id].allIn);
 }
-function startBettingRound(room) {
-  const players = room.players || {};
-  Object.keys(players).forEach(id => {
-    players[id].roundBet = 0;
+function startBettingRound(room){
+  const players=room.players||{};
+  Object.keys(players).forEach(id=>{
+    players[id].roundBet=0;
   });
-  room.maxBet = 0;
-  room.actions = {};
+  room.maxBet=0;
+  room.actions={};
 
-  const seats = getSeatOrder(room);
-  room.turnOrder = seats.filter(id => players[id] && !players[id].folded);
-  const nextId = getNextActingId(room, room.dealerId);
-  room.activeTurn = nextId || room.turnOrder[0] || null;
+  const seats=getSeatOrder(room);
+  room.turnOrder=seats.filter(id=>players[id]&&!players[id].folded);
+  const nextId=getNextActingId(room,room.dealerId);
+  room.activeTurn=nextId||room.turnOrder[0]||null;
 }
 function finishByFold(room,remaining){
   const players=room.players||{};
@@ -879,6 +879,8 @@ function setControls(room){
       betInput.value=Math.min(minTarget,maxTarget);
     }
   }
+
+  return {isLive,isMyActiveTurn,isFolded,isAllIn,alreadyActed,canAct,toCall,maxBet};
 }
 
 function render(room){
@@ -960,20 +962,15 @@ stage.toUpperCase()}
 · ${
 ids.length}
 / 8人`);
-setControls(room);
+const ctrl=setControls(room);
 const activeName=room.activeTurn?players[room.activeTurn]?.name||"プレイヤー":"";
 if(["preflop","flop","turn","river"].includes(stage)){
-  const maxBet=Number(room.maxBet||0);
-  const myRoundBet=Number(me?.roundBet||0);
-  const toCall=Math.max(0,maxBet-myRoundBet);
   if(room.activeTurn===myId){
     $("turnBanner").textContent="あなたの行動ターンです！";
-    if(me?.folded){
-      $("actionHint").textContent="フォールド済みのため行動できません。";
-    }else if(me?.allIn){
-      $("actionHint").textContent="オールイン済みのため他のプレイヤーの行動を待っています。";
-    }else if(toCall>0){
-      $("actionHint").textContent=`現在 ${maxBet}pt のベットが出ています。コール（あと ${toCall}pt）、レイズ、またはフォールドを選んでください。`;
+    if(!ctrl.canAct){
+      $("actionHint").textContent=`ボタン無効中（folded:${ctrl.isFolded}, allIn:${ctrl.isAllIn}, acted:${ctrl.alreadyActed}, busy:${busy}）`;
+    }else if(ctrl.toCall>0){
+      $("actionHint").textContent=`現在 ${ctrl.maxBet}pt のベットが出ています。コール（あと ${ctrl.toCall}pt）、レイズ、またはフォールドを選んでください。`;
     }else{
       $("actionHint").textContent="まだベットは出ていません。チェック、ベット、またはフォールドを選んでください。";
     }
@@ -981,8 +978,8 @@ if(["preflop","flop","turn","river"].includes(stage)){
     $("turnBanner").textContent=activeName+" の行動中です。";
     $("actionHint").textContent="あなたのターンになるまでお待ちください。";
   }else{
-    $("turnBanner").textContent="次フェーズへの進行を処理中です...";
-    $("actionHint").textContent="同期状況を確認してください。";
+    $("turnBanner").textContent="行動ターンが未設定（activeTurn: null）です。";
+    $("actionHint").textContent="コンソールエラーや開始処理を確認してください。";
   }
 }else{
   $("turnBanner").textContent=stage==="waiting"?"ゲーム開始後、行動ターンが表示されます。":"このラウンドの行動は終了しました。";
