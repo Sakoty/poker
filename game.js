@@ -929,8 +929,7 @@ function render(room) {
     }
 
     const community = room.community || [];
-    renderCards($("communityCards"), community, 5);
-    $("stageLabel").textContent = ({
+    const stageText = ({
       waiting: "参加者募集中",
       preflop: "プリフロップ：手札配布済み（SB/BB徴収済）",
       flop: "フロップ：共有カード3枚",
@@ -939,6 +938,14 @@ function render(room) {
       showdown: "ショーダウン",
       finished: "ラウンド終了"
     })[stage] || stage;
+    renderCards($("communityCards"), community, 5);
+    $("stageLabel").textContent = stageText;
+    if ($("actionCommunityCards")) {
+      renderCards($("actionCommunityCards"), community, 5);
+    }
+    if ($("actionStageLabel")) {
+      $("actionStageLabel").textContent = stageText;
+    }
 
     const me = players[myId];
     renderCards($("myCards"), me?.hole || [], 2);
