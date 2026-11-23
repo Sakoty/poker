@@ -475,6 +475,7 @@ function settleShowdown(room) {
   }
   room.result = summaries.length > 0 ? summaries.join("
 ") : "分配対象がありませんでした";
+
   room.stage = "showdown";
   room.activeTurn = null;
   room.actions = {};
@@ -1347,10 +1348,6 @@ $("allInSetBtn").addEventListener("click", () => {
   updateChipReadout(latestRoom);
 });
 
-renderAvatarPicker();
-updateChipReadout(null);
-
-
 let activeMobileTab = "table";
 
 function applyMobileViewTab(tabName) {
@@ -1413,4 +1410,23 @@ function initMobileNavigation() {
   });
 }
 
-initMobileNavigation();
+
+// ロビー＆ナビゲーション安全初期化
+(function safeBootstrap() {
+  try {
+    if (typeof renderAvatarPicker === "function") {
+      renderAvatarPicker();
+    }
+    if (typeof updateChipReadout === "function") {
+      updateChipReadout(latestRoom || null);
+    }
+    if (typeof initMobileNavigation === "function") {
+      initMobileNavigation();
+    }
+  } catch (err) {
+    console.error("Bootstrap error:", err);
+    if ($("message")) {
+      $("message").textContent = "初期化エラー: " + (err?.message || err);
+    }
+  }
+})();
