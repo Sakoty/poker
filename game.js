@@ -473,7 +473,8 @@ function settleShowdown(room) {
     });
     room.chipHistory = room.chipHistory.slice(-20);
   }
-  room.result = summaries.length > 0 ? summaries.join("\n") : "分配対象がありませんでした";
+  room.result = summaries.length > 0 ? summaries.join("
+") : "分配対象がありませんでした";
   room.stage = "showdown";
   room.activeTurn = null;
   room.actions = {};
@@ -878,6 +879,19 @@ function render(room) {
   try {
     latestRoom = room;
     const players = room.players || {}, ids = getSeatOrder(room), stage = room.stage || "waiting";
+    if ($("hudPot")) $("hudPot").textContent = Number(room.pot || 0).toLocaleString("ja-JP");
+    if ($("hudMaxBet")) $("hudMaxBet").textContent = Number(room.maxBet || 0).toLocaleString("ja-JP");
+    if ($("hudMyChips")) $("hudMyChips").textContent = Number(players[myId]?.chips ?? 1000).toLocaleString("ja-JP");
+    if ($("hudTurn")) {
+      if (!["preflop", "flop", "turn", "river"].includes(stage)) {
+        $("hudTurn").textContent = stage === "waiting" ? "待機" : "終了";
+      } else if (room.activeTurn === myId) {
+        $("hudTurn").textContent = "自分！";
+      } else {
+        $("hudTurn").textContent = room.activeTurn ? (players[room.activeTurn]?.name || "他") : "-";
+      }
+    }
+
     $("potAmount").textContent = Number(room.pot || 0).toLocaleString("ja-JP");
     $("maxBetAmount").textContent = Number(room.maxBet || 0).toLocaleString("ja-JP");
 
@@ -937,6 +951,9 @@ function render(room) {
     status(`${stage.toUpperCase()} · ${ids.length}/8人`);
 
     const ctrl = setControls(room);
+    if ($("tabTurnDot")) {
+      $("tabTurnDot").classList.toggle("hidden", !ctrl.isMyActiveTurn);
+    }
     const activeName = room.activeTurn ? players[room.activeTurn]?.name || "プレイヤー" : "";
     if (["preflop", "flop", "turn", "river"].includes(stage)) {
       if (room.activeTurn === myId) {
@@ -1332,3 +1349,68 @@ $("allInSetBtn").addEventListener("click", () => {
 
 renderAvatarPicker();
 updateChipReadout(null);
+
+
+let activeMobileTab = "table";
+
+function applyMobileViewTab(tabName) {
+  activeMobileTab = tabName === "action" ? "action" : "table";
+  const panel = $("gamePanel");
+  const tabTableBtn = $("tabTableBtn");
+  const tabActionBtn = $("tabActionBtn");
+  if (panel) {
+    panel.classList.remove("tab-mode-table", "tab-mode-action");
+    panel.classList.add(`tab-mode-${activeMobileTab}`);
+  }
+  if (tabTableBtn) {
+    const isTable = activeMobileTab === "table";
+    tabTableBtn.classList.toggle("active", isTable);
+    tabTableBtn.setAttribute("aria-selected", String(isTable));
+  }
+  if (tabActionBtn) {
+    const isAction = activeMobileTab === "action";
+    tabActionBtn.classList.toggle("active", isAction);
+    tabActionBtn.setAttribute("aria-selected", String(isAction));
+  }
+}
+
+function setDrawerOpen(open) {
+  const drawer = $("roomDrawer");
+  const backdrop = $("drawerBackdrop");
+  if (!drawer || !backdrop) return;
+  drawer.classList.toggle("hidden", !open);
+  backdrop.classList.toggle("hidden", !open);
+  backdrop.setAttribute("aria-hidden", String(!open));
+}
+
+function setHandsModalOpen(open) {
+  const modal = $("handsModal");
+  const backdrop = $("handsModalBackdrop");
+  if (!modal || !backdrop) return;
+  modal.classList.toggle("hidden", !open);
+  backdrop.classList.toggle("hidden", !open);
+  backdrop.setAttribute("aria-hidden", String(!open));
+}
+
+function initMobileNavigation() {
+  applyMobileViewTab("table");
+  $("tabTableBtn")?.addEventListener("click", () => applyMobileViewTab("table"));
+  $("tabActionBtn")?.addEventListener("click", () => applyMobileViewTab("action"));
+
+  $("openRoomDrawerBtn")?.addEventListener("click", () => setDrawerOpen(true));
+  $("closeDrawerBtn")?.addEventListener("click", () => setDrawerOpen(false));
+  $("drawerBackdrop")?.addEventListener("click", () => setDrawerOpen(false));
+
+  $("openHandsModalBtn")?.addEventListener("click", () => setHandsModalOpen(true));
+  $("closeHandsModalBtn")?.addEventListener("click", () => setHandsModalOpen(false));
+  $("handsModalBackdrop")?.addEventListener("click", () => setHandsModalOpen(false));
+
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape") {
+      setDrawerOpen(false);
+      setHandsModalOpen(false);
+    }
+  });
+}
+
+initMobileNavigation();
