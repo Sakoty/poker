@@ -25,22 +25,21 @@ const AVATARS = [
   { id: "cat", glyph: "🐱", label: "ネコ" },
   { id: "dog", glyph: "🐶", label: "イヌ" },
   { id: "owl", glyph: "🦉", label: "フクロウ" },
-  { id: "🎩", glyph: "🎩", label: "紳士" },
-  { id: "🤖", glyph: "🤖", label: "ロボ" },
-  { id: "🐉", glyph: "🐉", label: "ドラゴン" },
-  { id: "🐰", glyph: "🐰", label: "ウサギ" }
+  { id: "gentleman", glyph: "🎩", label: "紳士" },
+  { id: "robot", glyph: "🤖", label: "ロボ" },
+  { id: "dragon", glyph: "🐉", label: "ドラゴン" },
+  { id: "rabbit", glyph: "🐰", label: "ウサギ" }
 ];
 
-// 自分(index 0 = 手前6時)を基準に時計回りで卓周囲へ配置する座標(%)
 const TABLE_SEAT_COORDS = [
-  { left: 50, top: 91 }, // 0: 自分（6時・手前中央）
-  { left: 16, top: 82 }, // 1: 左下
-  { left: 8,  top: 50 }, // 2: 左中央（9時）
-  { left: 16, top: 18 }, // 3: 左上
-  { left: 50, top: 9  }, // 4: 上中央（12時）
-  { left: 84, top: 18 }, // 5: 右上
-  { left: 92, top: 50 }, // 6: 右中央（3時）
-  { left: 84, top: 82 }  // 7: 右下
+  { left: 50, top: 91 },
+  { left: 16, top: 82 },
+  { left: 8,  top: 50 },
+  { left: 16, top: 18 },
+  { left: 50, top: 9  },
+  { left: 84, top: 18 },
+  { left: 92, top: 50 },
+  { left: 84, top: 82 }
 ];
 
 const app = initializeApp(firebaseConfig);
@@ -474,8 +473,7 @@ function settleShowdown(room) {
     });
     room.chipHistory = room.chipHistory.slice(-20);
   }
-  room.result = summaries.length > 0 ? summaries.join("
-") : "分配対象がありませんでした";
+  room.result = summaries.length > 0 ? summaries.join("\n") : "分配対象がありませんでした";
   room.stage = "showdown";
   room.activeTurn = null;
   room.actions = {};
@@ -796,7 +794,6 @@ function renderSeatsAroundTable(room, ids, players, stage) {
   const myIndex = ids.indexOf(myId);
   const rotateOffset = myIndex >= 0 ? myIndex : 0;
 
-  // 自分が存在する場合は手前中央(slot 0)に来るよう回転
   const orderedForView = ids.map((_, idx) => ids[(idx + rotateOffset) % ids.length]);
 
   TABLE_SEAT_COORDS.forEach((coord, slotIdx) => {
@@ -899,7 +896,7 @@ function render(room) {
         $("actionHint").textContent = "あなたのターンになるまでお待ちください。";
       } else {
         $("turnBanner").textContent = "行動ターンが未設定（activeTurn: null）です。";
-        $("actionHint").textContent = "F12のコンソールにエラーが出ていないか確認してください。";
+        $("actionHint").textContent = "コンソールにエラーが出ていないか確認してください。";
       }
     } else {
       $("turnBanner").textContent = stage === "waiting" ? "ゲーム開始後、行動ターンが表示されます。" : "このラウンドの行動は終了しました。";
