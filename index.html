@@ -2,7 +2,8 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0b2417">
 <title>Texas Hold'em Online</title>
 <link rel="stylesheet" href="./style.css">
 </head>
@@ -12,12 +13,12 @@
   <p>ONLINE · D / SB / BB · SIDE POTS · TABLE SEATS</p>
 </header>
 
-<main>
+<main class="has-sticky-bar">
   <section class="panel lobby-panel" id="lobby">
     <h2>プレイヤー設定</h2>
     <div class="form-group">
       <label for="nameInput" class="field-label">プレイヤー名</label>
-      <input id="nameInput" maxlength="12" placeholder="プレイヤー名を入力">
+      <input id="nameInput" maxlength="12" placeholder="プレイヤー名を入力" autocomplete="nickname">
     </div>
 
     <div class="form-group">
@@ -33,7 +34,7 @@
 
     <div class="form-group">
       <label for="roomInput" class="field-label">ルームIDで参加</label>
-      <input id="roomInput" maxlength="8" placeholder="ルームID（例: AB12CD）">
+      <input id="roomInput" maxlength="8" placeholder="ルームID（例: AB12CD）" autocapitalize="characters" spellcheck="false">
       <div><button id="joinBtn" class="secondary">ルームに参加</button></div>
     </div>
 
@@ -42,24 +43,24 @@
 
   <section class="panel hidden" id="gamePanel">
     <div class="room-header">
-      <div>
+      <div class="room-code-block">
         <h2>ゲームルーム</h2>
-        <p class="muted room-sub">ルームID</p>
-        <div class="room-code" id="roomCode"></div>
+        <div class="room-code-row">
+          <span class="muted room-sub">ID:</span>
+          <span class="room-code" id="roomCode"></span>
+          <button id="copyRoomBtn" class="secondary compact-btn" type="button">コピー</button>
+        </div>
       </div>
       <div class="room-header-side">
-        <button id="copyRoomBtn" class="secondary">IDをコピー</button>
         <p id="gameStatus" class="status">接続中...</p>
       </div>
     </div>
 
-    <p class="chip-note">ブラインド：SB 10pt / BB 20pt。複数人オールイン時はメインポット＆サイドポットで自動分配されます。自分は手前中央（6時）に表示されます。</p>
-
     <div class="table-stage" id="tableStage">
       <div class="table-area">
         <div class="pot-bar">
-          <div class="pot-pill">🟡 TOTAL POT: <span id="potAmount">0</span> pt</div>
-          <div class="pot-pill">現在のベット基準: <span id="maxBetAmount">0</span> pt</div>
+          <div class="pot-pill">🟡 POT: <span id="potAmount">0</span> pt</div>
+          <div class="pot-pill">基準: <span id="maxBetAmount">0</span> pt</div>
         </div>
         <div class="side-pot-list" id="sidePotList"></div>
         <h3>コミュニティカード</h3>
@@ -79,13 +80,13 @@
       <h3>プレイヤー行動</h3>
       <p id="turnBanner" class="turn-banner">ゲーム開始後、行動ターンが表示されます。</p>
       <div class="action-buttons">
-        <button id="checkOrCallBtn">チェック</button>
-        <button id="foldActionBtn" class="danger">フォールド</button>
+        <button id="checkOrCallBtn" type="button">チェック</button>
+        <button id="foldActionBtn" class="danger" type="button">フォールド</button>
       </div>
       <div class="bet-controls">
-        <label for="betAmountInput" class="muted">ラウンド合計ベット額:</label>
-        <input id="betAmountInput" type="number" min="1" step="10" value="20">
-        <button id="betOrRaiseBtn" class="secondary">ベット</button>
+        <label for="betAmountInput" class="muted">合計ベット:</label>
+        <input id="betAmountInput" type="number" inputmode="numeric" min="1" step="10" value="20">
+        <button id="betOrRaiseBtn" class="secondary" type="button">ベット</button>
       </div>
       <div class="quick-bets">
         <button type="button" class="secondary quick-bet-btn" data-add="20">+20</button>
@@ -102,9 +103,9 @@
     </section>
 
     <div class="action-row">
-      <button id="startBtn">ゲーム開始・配布</button>
-      <button id="resetBtn" class="secondary">次のゲーム</button>
-      <button id="leaveBtn" class="danger">退出</button>
+      <button id="startBtn" type="button">ゲーム開始・配布</button>
+      <button id="resetBtn" class="secondary" type="button">次のゲーム</button>
+      <button id="leaveBtn" class="danger" type="button">退出</button>
     </div>
     <p class="muted center-note">全員のベット額が揃い行動が完了すると、次のカード公開・ショーダウンへ自動進行します。</p>
 
@@ -114,6 +115,16 @@
     </section>
   </section>
 </main>
+
+<!-- スマホ向け固定クイックアクションバー（入室時・自ターン時に活用） -->
+<div class="mobile-quick-bar hidden" id="mobileQuickBar" aria-label="クイック行動バー">
+  <div class="mobile-quick-status" id="mobileQuickStatus">待機中</div>
+  <div class="mobile-quick-btns">
+    <button type="button" id="mobileCheckOrCallBtn">チェック</button>
+    <button type="button" id="mobileBetOrRaiseBtn" class="secondary">ベット</button>
+    <button type="button" id="mobileFoldBtn" class="danger">フォールド</button>
+  </div>
+</div>
 
 <footer>Texas Hold'em Online · D / SB / BB & Side Pots</footer>
 
