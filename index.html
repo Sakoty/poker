@@ -42,6 +42,13 @@
   </section>
 
   <section class="panel hidden" id="gamePanel">
+    <div class="mobile-hud-bar" id="mobileHudBar">
+      <div class="hud-chip-item"><span class="hud-lbl">POT</span><strong id="hudPot">0</strong></div>
+      <div class="hud-chip-item"><span class="hud-lbl">基準</span><strong id="hudMaxBet">0</strong></div>
+      <div class="hud-chip-item"><span class="hud-lbl">所持</span><strong id="hudMyChips">1,000</strong></div>
+      <div class="hud-chip-item"><span class="hud-lbl">番</span><strong id="hudTurn">-</strong></div>
+    </div>
+
     <div class="room-header">
       <div class="room-code-block">
         <h2>ゲームルーム</h2>
@@ -56,7 +63,7 @@
       </div>
     </div>
 
-    <div class="table-stage" id="tableStage">
+    <div class="table-stage view-pane" id="tableStage" data-view-pane="table">
       <div class="table-area">
         <div class="pot-bar">
           <div class="pot-pill">🟡 POT: <span id="potAmount">0</span> pt</div>
@@ -70,13 +77,13 @@
       <div class="seats-layer" id="players"></div>
     </div>
 
-    <section class="panel my-hand-panel">
+    <section class="panel my-hand-panel view-pane" id="myHandPanel" data-view-pane="table">
       <h3>あなたの手札</h3>
       <div id="myCards" class="cards"></div>
       <p id="myHandRank" class="status"></p>
     </section>
 
-    <section class="action-panel" id="actionPanel">
+    <section class="action-panel view-pane" id="actionPanel" data-view-pane="action">
       <h3>プレイヤー行動</h3>
       <p id="turnBanner" class="turn-banner">ゲーム開始後、行動ターンが表示されます。</p>
       <div class="action-buttons">
@@ -144,17 +151,21 @@
       <p id="resultText"></p>
     </section>
 
-    <div class="action-row">
-      <button id="startBtn" type="button">ゲーム開始・配布</button>
-      <button id="resetBtn" class="secondary" type="button">次のゲーム</button>
-      <button id="leaveBtn" class="danger" type="button">退出</button>
+    <!-- スマホ用ビュー切り替えタブ（卓・手札 / チップ・行動） -->
+    <div class="mobile-view-tabs" id="mobileViewTabs" role="tablist" aria-label="画面表示切替">
+      <button type="button" class="view-tab-btn active" role="tab" aria-selected="true" data-view-tab="table" id="tabTableBtn">
+        🃏 卓・手札
+      </button>
+      <button type="button" class="view-tab-btn" role="tab" aria-selected="false" data-view-tab="action" id="tabActionBtn">
+        🟡 チップ・行動 <span class="tab-turn-dot hidden" id="tabTurnDot" aria-hidden="true">!</span>
+      </button>
     </div>
-    <p class="muted center-note">全員のベット額が揃い行動が完了すると、次のカード公開・ショーダウンへ自動進行します。</p>
 
-    <section class="chip-history" id="chipHistory">
-      <h4>ポット獲得履歴</h4>
-      <ol class="chip-history-list" id="chipHistoryList"><li>まだ獲得履歴はありません。</li></ol>
-    </section>
+    <!-- ドロワー＆モーダルを開くクイックツールバー -->
+    <div class="utility-bar" id="utilityBar">
+      <button type="button" class="secondary utility-btn" id="openRoomDrawerBtn">⚙️ ルーム・履歴</button>
+      <button type="button" class="secondary utility-btn" id="openHandsModalBtn">📖 役早見表</button>
+    </div>
   </section>
 </main>
 
@@ -170,5 +181,56 @@
 <footer>Texas Hold'em Online · D / SB / BB & Side Pots</footer>
 
 <script type="module" src="./game.js"></script>
+
+<!-- スライドドロワー：ルーム操作・ラウンド進行・ポット獲得履歴 -->
+<div class="drawer-backdrop hidden" id="drawerBackdrop" aria-hidden="true"></div>
+<aside class="side-drawer hidden" id="roomDrawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle">
+  <div class="drawer-header">
+    <h3 id="drawerTitle">ルーム操作・履歴</h3>
+    <button type="button" class="secondary compact-btn" id="closeDrawerBtn" aria-label="閉じる">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="drawer-section">
+      <h4>ラウンド管理</h4>
+      <div class="drawer-btn-stack">
+        <button id="startBtn" type="button">ゲーム開始・配布</button>
+        <button id="resetBtn" class="secondary" type="button">次のゲーム</button>
+        <button id="leaveBtn" class="danger" type="button">ルームから退出</button>
+      </div>
+      <p class="muted center-note">全員のベット額が揃い行動が完了すると、次のカード公開・ショーダウンへ自動進行します。</p>
+    </div>
+
+    <div class="drawer-section">
+      <h4>ポット獲得履歴</h4>
+      <div class="chip-history" id="chipHistory">
+        <ol class="chip-history-list" id="chipHistoryList"><li>まだ獲得履歴はありません。</li></ol>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- モーダル：テキサスホールデム 役早見表 -->
+<div class="modal-backdrop hidden" id="handsModalBackdrop" aria-hidden="true"></div>
+<div class="info-modal hidden" id="handsModal" role="dialog" aria-modal="true" aria-labelledby="handsModalTitle">
+  <div class="modal-header">
+    <h3 id="handsModalTitle">ポーカー役早見表（強い順）</h3>
+    <button type="button" class="secondary compact-btn" id="closeHandsModalBtn" aria-label="閉じる">✕</button>
+  </div>
+  <div class="modal-body">
+    <ul class="hand-rank-list">
+      <li><strong>ロイヤルフラッシュ</strong><span>A・K・Q・J・10 同スート</span></li>
+      <li><strong>ストレートフラッシュ</strong><span>連番5枚 同スート</span></li>
+      <li><strong>フォーカード</strong><span>同じ数字4枚</span></li>
+      <li><strong>フルハウス</strong><span>3枚＋2枚のペア</span></li>
+      <li><strong>フラッシュ</strong><span>同スート5枚</span></li>
+      <li><strong>ストレート</strong><span>連番5枚</span></li>
+      <li><strong>スリーカード</strong><span>同じ数字3枚</span></li>
+      <li><strong>ツーペア</strong><span>2種類のペア</span></li>
+      <li><strong>ワンペア</strong><span>同じ数字2枚</span></li>
+      <li><strong>ハイカード</strong><span>役なし（最も高いカード）</span></li>
+    </ul>
+  </div>
+</div>
+
 </body>
 </html>
