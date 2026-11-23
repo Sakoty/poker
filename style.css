@@ -82,7 +82,7 @@ input {
   border-radius: 10px;
   background: #081b11;
   color: #fff;
-  font-size: 16px; /* iOSでフォーカス時ズームを防ぐ */
+  font-size: 16px;
 }
 
 input:focus {
@@ -254,7 +254,6 @@ button:disabled {
   margin: 5px 0;
 }
 
-/* 卓を囲むレイアウト */
 .table-stage {
   position: relative;
   min-height: 580px;
@@ -439,7 +438,6 @@ button:disabled {
   font-size: 11px;
 }
 
-/* ポット・サイドポット表示 */
 .pot-bar {
   display: flex;
   justify-content: center;
@@ -660,12 +658,10 @@ footer {
   font-size: 12px;
 }
 
-/* スマホ固定クイックバー（デフォルト非表示・スマホで表示） */
 .mobile-quick-bar {
   display: none;
 }
 
-/* タブレット・スマホ向けレイアウト（900px以下） */
 @media (max-width: 900px) {
   .table-stage {
     min-height: auto;
@@ -698,11 +694,10 @@ footer {
   }
 
   .seat-empty {
-    display: none; /* スマホでは空席スロットを省いて縦スクロールを短縮 */
+    display: none;
   }
 }
 
-/* スマホ専用最適化（600px以下） */
 @media (max-width: 600px) {
   header {
     padding: 12px 10px;
@@ -844,7 +839,6 @@ footer {
     padding: 8px 12px;
   }
 
-  /* 画面下部に固定するクイック行動バー */
   .mobile-quick-bar {
     position: fixed;
     left: 0;
