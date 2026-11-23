@@ -275,7 +275,7 @@ height:96px}
 </style>
 </head>
 <body>
-<header><h1>TEXAS HOLD'EM</h1><p>ONLINE · CHIP BETTING MODE</p></header>
+<header><h1>TEXAS HOLD'EM</h1><p>ONLINE · D / SB / BB & CHIP BETTING</p></header>
 <main>
 <section class="panel" id="lobby">
 <h2>プレイヤー設定</h2><input id="nameInput" maxlength="12" placeholder="プレイヤー名">
@@ -285,7 +285,7 @@ height:96px}
 <section class="panel hidden" id="gamePanel">
 <h2>ゲームルーム</h2><p>ルームID</p><div class="room-code" id="roomCode"></div><button id="copyRoomBtn" class="secondary">IDをコピー</button>
 <p id="gameStatus" class="status">接続中...</p><hr><h3>プレイヤー</h3><div class="players" id="players"></div>
-<p class="chip-note">手持ちチップを使ってベット／コール／レイズができます。勝者がポットを獲得します。</p>
+<p class="chip-note">ブラインド：SB 10pt / BB 20pt。手持ちチップを使ってコール／レイズ／フォールドができます。</p>
 <section class="chip-history" id="chipHistory">
 <h4>ポット獲得履歴</h4>
 <ol class="chip-history-list" id="chipHistoryList"><li>まだ獲得履歴はありません。</li></ol>
@@ -323,7 +323,7 @@ height:96px}
 <section class="result hidden" id="resultBox"><h2>ショーダウン結果</h2><p id="resultText"></p></section>
 <div class="action-row"><button id="startBtn">ゲーム開始・配布</button><button id="resetBtn" class="secondary">次のゲーム</button><button id="leaveBtn" class="danger">退出</button></div>
 <p class="muted">全員のベット額が揃い行動が完了すると、次のカード公開・ショーダウンへ自動進行します。</p>
-</section></main><footer>Texas Hold'em Online · Step 1: Chip Betting & Auto Progression</footer>
+</section></main><footer>Texas Hold'em Online · D / SB / BB & Chip Betting</footer>
 <script type="module">
 import {
 initializeApp}
@@ -349,6 +349,8 @@ myId=crypto.randomUUID();
 sessionStorage.setItem("cardBattleTabPlayerId",myId)}
 let myName="",roomId="",roomPath="",isHost=false,roomListener=null,busy=false;
 let latestRoom=null;
+const SB_AMOUNT=10;
+const BB_AMOUNT=20;
 const $=id=>document.getElementById(id);
 function status(t){
 $("gameStatus").textContent=t}
@@ -539,6 +541,57 @@ score:s,cards:five}
 }
 return best}
 
+function getSeatOrder(room){
+  const players=room.players||{};
+  const raw=Array.isArray(room.seatOrder)?room.seatOrder:Object.values(room.seatOrder||{});
+  const ids=Object.keys(players);
+  const valid=raw.filter(id=>typeof id==="string"&&players[id]);
+  ids.forEach(id=>{
+    if(!valid.includes(id))valid.push(id);
+  });
+  return valid;
+}
+function getSeatByOffset(seats,startIndex,offset){
+  if(!seats.length)return null;
+  const len=seats.length;
+  return seats[(((startIndex+offset)%len)+len)%len];
+}
+function getNextActingId(room,startId){
+  const players=room.players||{};
+  const seats=getSeatOrder(room);
+  if(!seats.length)return null;
+  const startIdx=Math.max(0,seats.indexOf(startId));
+  for(let offset=1;offset<=seats.length;offset++){
+    const candidate=getSeatByOffset(seats,startIdx,offset);
+    const p=players[candidate];
+    if(p&&!p.folded&&!p.allIn){
+      return candidate;
+    }
+  }
+  return null;
+}
+function postBlind(room,playerId,amount,label){
+  const p=room.players?.[playerId];
+  if(!p)return 0;
+  p.chips=Number(p.chips??1000);
+  p.roundBet=Number(p.roundBet||0);
+  room.pot=Number(room.pot||0);
+  room.maxBet=Number(room.maxBet||0);
+
+  const pay=Math.min(Math.max(0,amount),p.chips);
+  p.chips-=pay;
+  p.roundBet+=pay;
+  room.pot+=pay;
+  if(p.chips===0){
+    p.allIn=true;
+  }
+  if(p.roundBet>room.maxBet){
+    room.maxBet=p.roundBet;
+  }
+  room.blinds=room.blinds||{};
+  room.blinds[playerId]=label;
+  return pay;
+}
 function activePlayerIds(room){
   const players=room.players||{};
   return Object.keys(players).filter(id=>!players[id].folded);
@@ -547,17 +600,17 @@ function canActPlayerIds(room){
   const players=room.players||{};
   return Object.keys(players).filter(id=>!players[id].folded&&!players[id].allIn);
 }
-function startBettingRound(room,firstId){
+function startBettingRound(room){
   const players=room.players||{};
   Object.keys(players).forEach(id=>{
     players[id].roundBet=0;
   });
   room.maxBet=0;
   room.actions={};
-  const order=(room.turnOrder||Object.keys(players)).filter(id=>players[id]&&!players[id].folded);
-  room.turnOrder=order;
-  const actingOrder=order.filter(id=>!players[id].allIn);
-  room.activeTurn=actingOrder.includes(firstId)?firstId:(actingOrder[0]||null);
+
+  const seats=getSeatOrder(room);
+  room.turnOrder=seats.filter(id=>players[id]&&!players[id].folded);
+  room.activeTurn=getNextActingId(room,room.dealerId);
 }
 function finishByFold(room,remaining){
   const players=room.players||{};
@@ -652,6 +705,11 @@ function advanceAfterActions(room){
     finishByFold(room,alive);
     return;
   }
+
+  const seats=getSeatOrder(room);
+  const order=seats.filter(id=>players[id]&&!players[id].folded);
+  room.turnOrder=order;
+
   const actingIds=canActPlayerIds(room);
   const maxBet=Number(room.maxBet||0);
   const pending=actingIds.filter(id=>{
@@ -660,7 +718,6 @@ function advanceAfterActions(room){
     return !room.actions?.[id]||pBet<maxBet;
   });
   if(pending.length>0){
-    const order=room.turnOrder||Object.keys(players);
     const currentIndex=Math.max(0,order.indexOf(room.activeTurn));
     for(let offset=1;offset<=order.length;offset++){
       const candidate=order[(currentIndex+offset)%order.length];
@@ -672,7 +729,6 @@ function advanceAfterActions(room){
     room.activeTurn=pending[0];
     return;
   }
-  // 行動可能なプレイヤーが1人以下（オールイン発生後など）は残りカードを一気に公開してショーダウン
   if(actingIds.length<2){
     while(["preflop","flop","turn","river"].includes(room.stage)){
       const moved=dealNextCommunityStage(room);
@@ -685,7 +741,7 @@ function advanceAfterActions(room){
   }
   const moved=dealNextCommunityStage(room);
   if(moved){
-    startBettingRound(room,room.turnOrder?.[0]);
+    startBettingRound(room);
   }
 }
 
@@ -736,7 +792,6 @@ async function submitBetAction(action,targetRoundBet=0){
 
         if(p.roundBet>room.maxBet){
           room.maxBet=p.roundBet;
-          // 誰かがベット／レイズしたら、他の未フォールド・非オールインプレイヤーの行動状態をリセット
           Object.keys(room.players).forEach(otherId=>{
             if(otherId!==myId){
               delete room.actions[otherId];
@@ -766,7 +821,7 @@ function actionLabelText(act){
     raise:"レイズ済",
     allin:"オールイン！",
     fold:"フォールド済"
-  })[act]||"行動済";
+  })[act]||"未行動";
 }
 
 function setControls(room){
@@ -809,9 +864,8 @@ function setControls(room){
   $("allInSetBtn").disabled=!canRaise;
   document.querySelectorAll(".quick-bet-btn").forEach(btn=>btn.disabled=!canRaise);
 
-  // 自分のターンになったとき、入力欄の初期値を適切な最小ベット/レイズ額に合わせる
   if(canRaise){
-    const minTarget=maxBet+20;
+    const minTarget=maxBet+BB_AMOUNT;
     const maxTarget=myRoundBet+myChips;
     const currentVal=Number(betInput.value||0);
     if(currentVal<=maxBet||currentVal>maxTarget){
@@ -822,16 +876,21 @@ function setControls(room){
 
 function render(room){
 latestRoom=room;
-const players=room.players||{},ids=Object.keys(players),stage=room.stage||"waiting";
+const players=room.players||{},ids=getSeatOrder(room),stage=room.stage||"waiting";
 $("potAmount").textContent=Number(room.pot||0).toLocaleString("ja-JP");
 $("maxBetAmount").textContent=Number(room.maxBet||0).toLocaleString("ja-JP");
 $("players").innerHTML="";
 ids.forEach(id=>{
 const p=players[id],box=document.createElement("div");
 box.className="player"+(id===myId?" me":"")+(id===room.activeTurn?" turn":"")+(p.folded?" folded":"");
+const badges=[];
+if(id===room.dealerId)badges.push("D");
+if(id===room.sbId)badges.push("SB");
+if(id===room.bbId)badges.push("BB");
+const posTag=badges.length?` [${badges.join("/")}]`:"";
 const nm=document.createElement("div");
 nm.className="player-name";
-nm.textContent=p.name+(id===room.host?" 👑":"");
+nm.textContent=p.name+posTag+(id===room.host?" 👑":"");
 const meta=document.createElement("div");
 meta.className="player-meta";
 const stateText=p.folded?"フォールド":p.allIn?"オールイン":(room.actions?.[id]?actionLabelText(room.actions[id]):"未行動");
@@ -882,7 +941,7 @@ $("chipHistoryList").appendChild(li);
 const community=room.community||[];
 renderCards($("communityCards"),community,5);
 $("stageLabel").textContent=({
-waiting:"参加者募集中",preflop:"プリフロップ：手札配布済み",flop:"フロップ：共有カード3枚",turn:"ターン：共有カード4枚",river:"リバー：共有カード5枚",showdown:"ショーダウン",finished:"ラウンド終了"}
+waiting:"参加者募集中",preflop:"プリフロップ：手札配布済み（SB/BB徴収済）",flop:"フロップ：共有カード3枚",turn:"ターン：共有カード4枚",river:"リバー：共有カード5枚",showdown:"ショーダウン",finished:"ラウンド終了"}
 )[stage]||stage;
 const me=players[myId];
 renderCards($("myCards"),me?.hole||[],2);
@@ -964,6 +1023,10 @@ createdAt:Date.now(),
 round:0,
 pot:0,
 maxBet:0,
+dealerId:null,
+sbId:null,
+bbId:null,
+seatOrder:[],
 community:[],
 deck:null,
 result:"",
@@ -1061,18 +1124,32 @@ busy=false}
 
 $("startBtn").onclick=()=>hostTransaction(room=>{
 if(room.stage!=="waiting")return;
-const ids=Object.keys(room.players||{});
-if(ids.length<2||ids.length>8)return;
+const players=room.players||{};
+const seats=getSeatOrder(room);
+if(seats.length<2||seats.length>8)return;
+
+const prevDealerIdx=seats.indexOf(room.dealerId);
+const dealerIdx=prevDealerIdx>=0?(prevDealerIdx+1)%seats.length:0;
+const dealerId=seats[dealerIdx];
+const isHeadsUp=seats.length===2;
+const sbId=isHeadsUp?dealerId:getSeatByOffset(seats,dealerIdx,1);
+const bbId=isHeadsUp?getSeatByOffset(seats,dealerIdx,1):getSeatByOffset(seats,dealerIdx,2);
+
 const deck=deckCreate();
-ids.forEach(id=>{
-  const p=room.players[id];
-  if(Number(p.chips??0)<=0)p.chips=1000; // チップ0のプレイヤーは自動補充
+seats.forEach(id=>{
+  const p=players[id];
+  if(Number(p.chips??0)<=0)p.chips=1000;
   p.hole=[deck.pop(),deck.pop()];
   p.handLabel="";
   p.roundBet=0;
   p.folded=false;
   p.allIn=false;
 });
+room.seatOrder=seats;
+room.dealerId=dealerId;
+room.sbId=sbId;
+room.bbId=bbId;
+room.blinds={};
 room.deck=deck;
 room.community=[];
 room.result="";
@@ -1080,9 +1157,17 @@ room.pot=0;
 room.maxBet=0;
 room.stage="preflop";
 room.round=(room.round||0)+1;
-room.turnOrder=ids.slice();
 room.actions={};
-room.activeTurn=room.turnOrder[0]||null;
+
+postBlind(room,sbId,SB_AMOUNT,"SB");
+postBlind(room,bbId,BB_AMOUNT,"BB");
+
+room.turnOrder=seats.slice();
+const firstActor=getNextActingId(room,bbId);
+room.activeTurn=firstActor;
+if(!firstActor){
+  advanceAfterActions(room);
+}
 return room}
 ,"開始できませんでした");
 
@@ -1101,6 +1186,7 @@ room.result="";
 room.pot=0;
 room.maxBet=0;
 room.actions={};
+room.blinds={};
 room.activeTurn=null;
 room.stage="waiting";
 return room}
@@ -1155,7 +1241,6 @@ finally{
 busy=false}
 };
 
-// チェック／コールボタン
 $("checkOrCallBtn").addEventListener("click",()=>{
   if(!latestRoom)return;
   const maxBet=Number(latestRoom.maxBet||0);
@@ -1164,16 +1249,13 @@ $("checkOrCallBtn").addEventListener("click",()=>{
   submitBetAction(toCall>0?"call":"check");
 });
 
-// ベット／レイズボタン
 $("betOrRaiseBtn").addEventListener("click",()=>{
   const target=Number($("betAmountInput").value||0);
   submitBetAction("raise",target);
 });
 
-// フォールドボタン
 $("foldActionBtn").addEventListener("click",()=>submitBetAction("fold"));
 
-// クイック加算ボタン（現在の入力値またはmaxBetを基準に加算）
 document.querySelectorAll(".quick-bet-btn").forEach(btn=>{
   btn.addEventListener("click",()=>{
     if(!latestRoom)return;
@@ -1187,7 +1269,6 @@ document.querySelectorAll(".quick-bet-btn").forEach(btn=>{
   });
 });
 
-// ALL-INセットボタン
 $("allInSetBtn").addEventListener("click",()=>{
   if(!latestRoom)return;
   const me=latestRoom.players?.[myId];
