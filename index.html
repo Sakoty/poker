@@ -27,7 +27,7 @@
     </div>
 
     <div class="lobby-actions">
-      <button id="createBtn">ルームを作成</button>
+      <button id="createBtn" type="button">ルームを作成</button>
     </div>
 
     <hr class="divider">
@@ -35,7 +35,7 @@
     <div class="form-group">
       <label for="roomInput" class="field-label">ルームIDで参加</label>
       <input id="roomInput" maxlength="8" placeholder="ルームID（例: AB12CD）" autocapitalize="characters" spellcheck="false">
-      <div><button id="joinBtn" class="secondary">ルームに参加</button></div>
+      <div><button id="joinBtn" class="secondary" type="button">ルームに参加</button></div>
     </div>
 
     <p id="message" class="muted" role="status" aria-live="polite"></p>
@@ -116,7 +116,6 @@
   </section>
 </main>
 
-<!-- スマホ向け固定クイックアクションバー（入室時・自ターン時に活用） -->
 <div class="mobile-quick-bar hidden" id="mobileQuickBar" aria-label="クイック行動バー">
   <div class="mobile-quick-status" id="mobileQuickStatus">待機中</div>
   <div class="mobile-quick-btns">
