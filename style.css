@@ -1,5 +1,6 @@
 * {
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
@@ -7,12 +8,13 @@ body {
   background: radial-gradient(circle at top, #0d2c1d 0%, #071711 65%);
   color: #f5f6f0;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden;
 }
 
 header {
   text-align: center;
-  padding: 20px 12px;
+  padding: 18px 12px;
   background: #0b2417;
   border-bottom: 1px solid #294d35;
 }
@@ -21,6 +23,7 @@ h1 {
   margin: 0;
   color: #d8c17b;
   letter-spacing: 3px;
+  font-size: clamp(22px, 5vw, 32px);
 }
 
 header p {
@@ -72,13 +75,14 @@ main {
 input {
   width: 100%;
   max-width: 420px;
-  padding: 12px;
+  min-height: 44px;
+  padding: 11px 12px;
   margin: 4px 0 8px;
   border: 1px solid #35563d;
   border-radius: 10px;
   background: #081b11;
   color: #fff;
-  font-size: 16px;
+  font-size: 16px; /* iOSでフォーカス時ズームを防ぐ */
 }
 
 input:focus {
@@ -89,7 +93,7 @@ input:focus {
 /* キャラクター選択 */
 .avatar-picker {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
   gap: 8px;
   margin-top: 6px;
 }
@@ -100,7 +104,8 @@ input:focus {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  padding: 10px 8px;
+  min-height: 64px;
+  padding: 10px 6px;
   margin: 0;
   border-radius: 12px;
   border: 1px solid #345b40;
@@ -108,6 +113,7 @@ input:focus {
   color: #e6efe8;
   font-size: 12px;
   font-weight: bold;
+  touch-action: manipulation;
   transition: transform 0.14s ease, border-color 0.14s ease, background 0.14s ease;
 }
 
@@ -130,13 +136,16 @@ input:focus {
 
 button {
   border: 0;
-  border-radius: 9px;
+  border-radius: 10px;
+  min-height: 44px;
   padding: 11px 16px;
   margin: 4px;
   background: #d5bd77;
   color: #152519;
   font-weight: bold;
+  font-size: 14px;
   cursor: pointer;
+  touch-action: manipulation;
   transition: filter 0.15s ease, transform 0.15s ease;
 }
 
@@ -144,9 +153,20 @@ button:hover:not(:disabled) {
   filter: brightness(1.06);
 }
 
+button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
 button:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+.compact-btn {
+  min-height: 36px;
+  padding: 6px 12px;
+  font-size: 12px;
+  margin: 0;
 }
 
 .secondary {
@@ -175,31 +195,39 @@ button:disabled {
 .room-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.room-code-block h2 {
+  margin: 0 0 4px;
+  font-size: 18px;
+}
+
+.room-code-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
 .room-sub {
-  margin: 4px 0 2px;
+  margin: 0;
   font-size: 12px;
 }
 
 .room-code {
-  font-size: 25px;
-  letter-spacing: 4px;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 3px;
   color: #e0cb8a;
   overflow-wrap: anywhere;
 }
 
 .room-header-side {
   text-align: right;
-}
-
-.chip-note {
-  font-size: 12px;
-  color: #a6baa8;
-  margin: 8px 0 12px;
 }
 
 .chip-history {
@@ -539,15 +567,15 @@ button:disabled {
 }
 
 .action-buttons {
-  display: flex;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
-  flex-wrap: wrap;
   margin-top: 8px;
 }
 
 .action-buttons button {
-  min-width: 130px;
+  margin: 0;
+  width: 100%;
 }
 
 .bet-controls {
@@ -556,8 +584,8 @@ button:disabled {
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
-  margin-top: 10px;
-  padding-top: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
   border-top: 1px solid #244732;
 }
 
@@ -569,26 +597,27 @@ button:disabled {
 }
 
 .quick-bets {
-  display: flex;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 6px;
-  flex-wrap: wrap;
   margin-top: 8px;
 }
 
 .quick-bets button {
-  padding: 6px 10px;
+  margin: 0;
+  padding: 8px 6px;
   font-size: 12px;
-  min-width: auto;
+  min-height: 40px;
 }
 
 .turn-banner {
   margin: 8px 0;
-  padding: 9px;
+  padding: 10px;
   border-radius: 9px;
   background: #284d34;
   color: #f0d98b;
   font-weight: bold;
+  font-size: 14px;
 }
 
 .result {
@@ -627,30 +656,37 @@ button:disabled {
 footer {
   text-align: center;
   color: #78927e;
-  padding: 18px;
+  padding: 18px 12px 28px;
   font-size: 12px;
 }
 
-/* タブレット・スマホ向けレスポンシブ */
+/* スマホ固定クイックバー（デフォルト非表示・スマホで表示） */
+.mobile-quick-bar {
+  display: none;
+}
+
+/* タブレット・スマホ向けレイアウト（900px以下） */
 @media (max-width: 900px) {
   .table-stage {
     min-height: auto;
-    padding: 16px 12px;
+    padding: 14px 10px;
     flex-direction: column;
-    gap: 14px;
+    gap: 12px;
   }
 
   .table-area {
-    border-radius: 28px;
+    border-radius: 26px;
+    border-width: 6px;
     max-width: 100%;
-    min-height: 200px;
+    min-height: 190px;
+    padding: 16px 12px;
   }
 
   .seats-layer {
     position: static;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
-    gap: 10px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
     width: 100%;
     pointer-events: auto;
   }
@@ -660,15 +696,61 @@ footer {
     width: auto;
     transform: none;
   }
+
+  .seat-empty {
+    display: none; /* スマホでは空席スロットを省いて縦スクロールを短縮 */
+  }
 }
 
-@media (max-width: 520px) {
+/* スマホ専用最適化（600px以下） */
+@media (max-width: 600px) {
+  header {
+    padding: 12px 10px;
+  }
+
+  header p {
+    font-size: 10px;
+    letter-spacing: 0.4px;
+  }
+
   main {
-    padding: 9px;
+    padding: 10px 8px 18px;
+  }
+
+  main.has-sticky-bar {
+    padding-bottom: 112px;
   }
 
   .panel {
-    padding: 13px;
+    padding: 13px 11px;
+    border-radius: 14px;
+    margin-bottom: 12px;
+  }
+
+  .avatar-picker {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .avatar-option {
+    min-height: 58px;
+    padding: 8px 4px;
+    font-size: 11px;
+  }
+
+  .avatar-option-glyph {
+    font-size: 22px;
+  }
+
+  .lobby-actions button,
+  #joinBtn,
+  .action-row button {
+    width: 100%;
+    margin: 4px 0;
+  }
+
+  .room-header {
+    align-items: flex-start;
   }
 
   .room-header-side {
@@ -676,19 +758,129 @@ footer {
     width: 100%;
   }
 
-  button {
-    width: 100%;
-    margin: 4px 0;
+  .room-code {
+    font-size: 19px;
+    letter-spacing: 2px;
   }
 
-  .quick-bets button,
-  .avatar-option {
-    width: auto;
+  .pot-pill {
+    font-size: 12px;
+    padding: 4px 10px;
+  }
+
+  .cards {
+    min-height: 92px;
+    gap: 6px;
   }
 
   .playing-card,
   .empty-card {
-    width: 60px;
-    height: 88px;
+    width: 56px;
+    height: 82px;
+    padding: 5px;
+    border-radius: 8px;
+  }
+
+  .rank {
+    font-size: 16px;
+  }
+
+  .suit {
+    font-size: 17px;
+  }
+
+  .player {
+    padding: 8px 6px;
+    border-radius: 12px;
+  }
+
+  .player-avatar {
+    width: 34px;
+    height: 34px;
+    font-size: 18px;
+  }
+
+  .player .cards {
+    min-height: 44px;
+  }
+
+  .player .playing-card {
+    width: 28px;
+    height: 42px;
+    padding: 2px 3px;
+  }
+
+  .player .rank {
+    font-size: 10px;
+  }
+
+  .player .suit {
+    font-size: 10px;
+  }
+
+  .bet-controls {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .bet-controls label {
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .bet-controls input {
+    width: 100%;
+    max-width: none;
+    min-height: 42px;
+    padding: 8px;
+    font-size: 15px;
+  }
+
+  .bet-controls button {
+    margin: 0;
+    min-height: 42px;
+    padding: 8px 12px;
+  }
+
+  /* 画面下部に固定するクイック行動バー */
+  .mobile-quick-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px));
+    background: rgba(9, 28, 18, 0.96);
+    border-top: 1px solid #d5bd77;
+    box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(8px);
+  }
+
+  .mobile-quick-status {
+    font-size: 11px;
+    font-weight: bold;
+    color: #f0d98b;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mobile-quick-btns {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .mobile-quick-btns button {
+    margin: 0;
+    min-height: 42px;
+    padding: 8px 6px;
+    font-size: 12px;
   }
 }
